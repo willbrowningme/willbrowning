@@ -1,0 +1,204 @@
+@tailwind base;
+
+@tailwind components;
+
+body {
+  font-size: 16px
+}
+
+.content {
+  width: 50rem;
+}
+
+a {
+  @apply text-blue-400;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  @apply text-gray-800 mt-8 mb-6 font-sans font-bold leading-tight;
+}
+
+h1 {
+  @apply text-3xl;
+}
+
+h3 {
+  @apply text-2xl;
+}
+
+.avatar {
+  @apply p-1;
+  line-height: 0;
+}
+
+.page-content {
+  @apply font-serif leading-normal text-xl text-gray-800;
+}
+
+.page p {
+  @apply mt-0 mb-6;
+}
+
+.page p:last-of-type,
+.posts li:last-of-type {
+  @apply mb-0;
+}
+
+.markdown p {
+  @apply mt-0 mb-6;
+}
+
+.markdown ul,
+.markdown ol {
+  @apply mb-6 list-disc pl-4 list-inside;
+}
+
+.markdown blockquote {
+  @apply block py-4 px-6 my-8 text-gray-700 shadow-md border-r-2 border-pink;
+  border-left: 15px solid theme('colors.pink.default');
+}
+
+.markdown blockquote p {
+  @apply mb-0;
+}
+
+p code, li code {
+  @apply px-1 text-purple bg-purple-light;
+}
+
+.tags a {
+  @apply text-purple bg-purple-light rounded-sm;
+  padding: 2px 5px;
+}
+
+.tags a:not(:first-of-type) {
+  @apply ml-1;
+}
+
+.topics li {
+  @apply mb-4;
+}
+
+.topics li:last-of-type {
+  @apply mb-0;
+}
+
+.topics li a {
+  @apply text-purple bg-purple-light;
+}
+
+.blog-note {
+  @apply mt-4 mb-4 py-4 px-8 text-pink bg-pink-light;
+}
+
+.blog-image {
+  @apply mb-8 text-center;
+}
+
+.blog-image p {
+  @apply mb-0;
+}
+
+.blog-image img {
+  @apply inline shadow-md;
+}
+
+.dot-divider {
+  @apply px-1;
+}
+
+.dot-divider:after {
+  content: '\00B7';
+}
+
+/* purgecss start ignore */
+pre {
+  @apply my-8 relative;
+}
+
+pre code {
+  @apply text-base font-mono rounded shadow-md leading-relaxed;
+}
+
+pre code.hljs {
+  @apply py-4 px-6;
+  background: #242b3d;
+}
+
+pre.md:after {
+  @apply flex items-center justify-center text-sm text-white absolute uppercase font-bold py-0 px-2 z-10 leading-loose rounded;
+  top: -10px;
+  right: -6px;
+}
+
+pre.md.html:after {
+  content: "html";
+  background: linear-gradient(135deg,#ee0979,#ff6a00);
+}
+
+pre.md.javascript:after {
+  content: "js";
+  background: linear-gradient(135deg,#F7971E,#FFD200);
+}
+
+pre.md.bash:after {
+  content: "bash";
+  background: linear-gradient(135deg,#a1a6c9,#7d80a2);
+}
+
+pre.md.css:after {
+  content: "css";
+  background: linear-gradient(135deg,#7983ff,#5f9de9);
+}
+
+pre.md.json:after {
+  content: "json";
+  background: linear-gradient(135deg,#6441A5,#2a0845);
+}
+
+pre.md.scss:after {
+  content: "scss";
+  background: linear-gradient(135deg,#ff8792,#ff4c9f);
+}
+
+pre.md.php:after {
+  content: "php";
+  background: linear-gradient(135deg,#4568DC,#B06AB3);
+}
+
+pre.md.yaml:after {
+  content: "yaml";
+  background: linear-gradient(135deg,#00b09b,#96c93d);
+}
+
+pre.md.go:after {
+  content: "go";
+  background: linear-gradient(135deg,#1FA2FF,#12D8FA);
+}
+
+pre.md.nginx:after {
+  content: "nginx";
+  background: linear-gradient(135deg,#11998e,#38ef7d);
+}
+
+pre.md.python:after {
+  content: "python";
+  background: linear-gradient(135deg,#004FF9,#FFF94C);
+}
+
+pre.md.markdown:after {
+  content: "markdown";
+  background: linear-gradient(135deg,#0F2027,#2C5364);
+}
+
+pre.md.xml:after {
+  content: "xml";
+  background: linear-gradient(135deg,#200122,#6f0000);
+}
+/* purgecss end ignore */
+
+@tailwind utilities;

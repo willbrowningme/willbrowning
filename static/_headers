@@ -1,0 +1,8 @@
+/_nuxt/*
+  cache-control: public, max-age=604800
+
+/favicon-32x32.png
+  cache-control: public, max-age=604800
+
+/favicon-16x16.png
+  cache-control: public, max-age=604800
