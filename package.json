@@ -13,21 +13,21 @@
     "precommit": "npm run lint"
   },
   "dependencies": {
-    "@nuxtjs/axios": "^5.4.1",
+    "@nuxtjs/axios": "^5.5.3",
     "@nuxtjs/feed": "^0.1.1",
     "@nuxtjs/sitemap": "^0.1.2",
-    "collect.js": "^4.8.1",
-    "dayjs": "^1.8.12",
+    "collect.js": "^4.12.5",
+    "dayjs": "^1.8.14",
     "dotenv": "^6.2.0",
     "glob-all": "^3.1.0",
-    "highlight.js": "^9.15.6",
+    "highlight.js": "^9.15.8",
     "marked": "^0.6.2",
-    "nuxt": "^2.6.2",
+    "nuxt": "^2.8.0",
     "purgecss-webpack-plugin": "^1.5.0",
     "remove-markdown": "^0.3.0"
   },
   "devDependencies": {
     "autoprefixer": "^8.6.4",
-    "tailwindcss": "^1.0.0-beta.5"
+    "tailwindcss": "^1.0.3"
   }
 }
