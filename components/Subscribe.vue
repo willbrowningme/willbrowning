@@ -1,5 +1,5 @@
 <template>
-  <div id="mc_embed_signup" class="w-full bg-gray-200 shadow-md rounded p-8 sm:p-10 my-8">
+  <div class="w-full bg-gray-200 shadow-md rounded p-8 sm:p-10 my-8">
 
     <div class="flex items-center flex-col sm:flex-row">
       <div class="w-full md:w-1/2 mb-4 md:mb-0">
@@ -18,6 +18,7 @@
           </div>
           <input type="hidden" name="list" value="G4t7tNFm3f6qoxz4mHaywQ"/>
           <input type="hidden" name="subform" value="yes"/>
+          <input class="hidden" type="checkbox" name="gdpr" id="gdpr" checked />
           <input type="submit" name="submit" id="submit" value="Let's Go!" class="button w-full bg-pink text-white font-bold py-2 px-4 rounded cursor-pointer font-sans tracking-wider"/>
         </form>
       </div>
