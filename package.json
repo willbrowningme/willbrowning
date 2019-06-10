@@ -13,7 +13,7 @@
     "precommit": "npm run lint"
   },
   "dependencies": {
-    "@nuxtjs/axios": "^5.5.3",
+    "@nuxtjs/axios": "^5.5.4",
     "@nuxtjs/feed": "^0.1.1",
     "@nuxtjs/sitemap": "^0.1.2",
     "collect.js": "^4.12.5",
@@ -22,7 +22,7 @@
     "glob-all": "^3.1.0",
     "highlight.js": "^9.15.8",
     "marked": "^0.6.2",
-    "nuxt": "^2.8.0",
+    "nuxt": "^2.8.1",
     "purgecss-webpack-plugin": "^1.5.0",
     "remove-markdown": "^0.3.0"
   },
