@@ -2,7 +2,7 @@
   <section>
     <article class="my-8">
       <div class="tags text-gray-600 font-bold font-sans text-sm tracking-wider">
-        <span>{{ post._created | toDate }}</span>
+        <span>{{ post._created | toDate }} (Updated: {{ post._modified | toDate }})</span>
         <span class="dot-divider"></span>
         <a v-for="(tag, key) in post.tags" :key="key" :href="`/category/${tag}`" class="text-pink no-underline">#{{ tag }}</a>
         <span class="dot-divider"></span>
