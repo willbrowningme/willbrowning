@@ -2,12 +2,346 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://willbrowning.me/feed.xml</id>
     <title>Will Browning - Feed</title>
-    <updated>2019-04-25T11:15:39Z</updated>
+    <updated>2019-07-31T08:45:20Z</updated>
     <generator>Feed for Node.js</generator>
     <link rel="alternate" href="https://willbrowning.me/feed.xml"/>
     <subtitle>A feed for willbrowning.me</subtitle>
     <icon>https://willbrowning.me/favicon.ico</icon>
     <rights>All rights reserved, Will Browning</rights>
+    <entry>
+        <title type="html"><![CDATA[Automated Offsite Encrypted Backups with Borg Backup]]></title>
+        <id>https://willbrowning.me/automated-offsite-encrypted-backups-with-borg-backup</id>
+        <link href="https://willbrowning.me/automated-offsite-encrypted-backups-with-borg-backup">
+        </link>
+        <updated>2019-06-25T13:02:59Z</updated>
+        <summary type="html"><![CDATA[In this post I'll be showing you how to set up Borg Backup to backup the important files on your VPS or local work station to a remote repository. For this tutorial I'm going to be using borgbase.com as the remote repository provider but there are other options you can choose.]]></summary>
+        <content type="html"><![CDATA[<p><a href="https://borgbase.com">Borgbase.com</a> was created specifically to host Borg repositories, it has a nice free plan that gives you 5GB of storages and allows upto 2 repositories. If you have a small VPS then this might be enough for you.</p>
+<p>If you don&#39;t want to use borgbase you could use <a href="https://www.rsync.net/products/attic.html">rysnc.net</a> or even another VPS that you run.</p>
+<p>This tutorial will be done on a fresh Digital Ocean droplet with Ubuntu 18.04. </p>
+<p>Commands will be run by a user named johndoe with sudo privileges.</p>
+<h2 id="install-borg-backup">Install Borg Backup</h2>
+<p>First things first we need to install Borg, luckily we can find it in Ubuntu&#39;s software repositories.</p>
+<pre><code class="language-bash">sudo apt-get update
+sudo apt install borgbackup</code></pre>
+<p>You can check everything worked correctly by running <code>borg --version</code>, you should see something like <code>borg 1.1.5</code>, which is the version at the time of writing this post.</p>
+<h2 id="install-python-3-and-pip">Install Python 3 and PIP</h2>
+<p>Now we need to install Python 3 along with PIP so that we can install Borgmatic.</p>
+<p>Borgmatic is a wrapper for Borg that allows us to manage backups with easy to use configuration files. It is not required to use Borg but I&#39;m going to use it here to show you how it works.</p>
+<p>You may already have Python 3 installed (I think 18.04 does by default). You can run the commands below to check.</p>
+<pre><code class="language-bash">python --version
+python3 --version</code></pre>
+<p>If Python 3 is already installed check what version of Python PIP is currently using, it might not be installed at all.</p>
+<pre><code class="language-bash">pip --version
+pip3 --version</code></pre>
+<p>If PIP returns (python 2.7) at the end or it is not installed at all then we need to install PIP for Python 3.</p>
+<pre><code class="language-bash">sudo apt-get install python3-pip python3-setuptools</code></pre>
+<p>Make sure everything was installed correctly by running <code>pip3 --version</code>.</p>
+<p>Next install the following package that is used by Borgmatic.</p>
+<pre><code class="language-bash">pip3 install wheel</code></pre>
+<h2 id="install-borgmatic">Install Borgmatic</h2>
+<p>Using PIP install Borgmatic for your user (johndoe in my case).</p>
+<pre><code class="language-bash">pip3 install --user --upgrade borgmatic</code></pre>
+<p>You may need to edit your <code>~/.bashrc</code> file to include these commands in your PATH by adding the following to the end of the file.</p>
+<pre><code>export PATH=&quot;$HOME/.local/bin:$PATH&quot;</code></pre><p>Then running <code>source ~/.bashrc</code> to update it for your current session.</p>
+<p>Next we can publish the default configuration file by running the following.</p>
+<pre><code class="language-bash">sudo env &quot;PATH=$PATH&quot; generate-borgmatic-config</code></pre>
+<p>The reason we pass <code>env &quot;PATH=$PATH&quot;</code> is to make sure we still have the borgmatic commands in our PATH when running sudo.</p>
+<p>We could edit the <code>secure_path</code> in /etc/sudoers to include /home/johndoe/.local/bin but I&#39;ll leave it as it is for this tutorial.</p>
+<p>Before we go and edit the config file we&#39;ll first generate a new key pair and create our remote repository in borgbase.</p>
+<h2 id="generate-new-ssh-key-pair">Generate New ssh Key Pair</h2>
+<p>To generate the key pair run the following command:</p>
+<pre><code class="language-bash">ssh-keygen -t ed25519 -a 100</code></pre>
+<p>Call it <code>/home/johndoe/.ssh/borg_id_ed25519</code> making sure to replace <code>johndoe</code> with the your username and leave the passphrase as empty.</p>
+<p>This will generate an Ed25519 key, which is shorter and faster than a comparable RSA key.</p>
+<pre><code class="language-bash">cat ~/.ssh/borg_id_ed25519.pub</code></pre>
+<p>Copy this <strong>public</strong> key and add it to your BorgBase account by clicking &quot;ACCOUNT&quot; and then &quot;ADD KEY&quot;. </p>
+<h2 id="create-repository-in-borgbase">Create Repository in BorgBase</h2>
+<p>Give it a name you&#39;ll recognise for your server and add the new key above to the Append-only access section.</p>
+<div class="blog-image">
+
+<p><img src="https://api.willbrowning.me/storage/uploads/2019/06/25/5d121b2f717a4borgbase-repo.png" alt="BorgBase Repository"></p>
+</div>
+
+<p>Copy the repo path as we&#39;ll be adding it to the config file next, it will be something like <code>c89dks9m@c89dks9m.repo.borgbase.com:repo</code>.</p>
+<h2 id="editing-the-config-file">Editing the Config File</h2>
+<p>Open /etc/borgmatic/config.yaml by running <code>sudo nano /etc/borgmatic/config.yaml</code> and edit its contents to look something like this:</p>
+<pre><code class="language-yaml"># Where to look for files to backup, and where to store those backups. See
+# https://borgbackup.readthedocs.io/en/stable/quickstart.html and
+# https://borgbackup.readthedocs.io/en/stable/usage.html#borg-create for details.
+location:
+    # List of source directories to backup (required). Globs and tildes are expanded.
+    source_directories:
+        - /root
+        - /home
+        - /etc
+        - /var/log/syslog*
+
+    # Paths to local or remote repositories (required). Tildes are expanded. Multiple
+    # repositories are backed up to in sequence. See ssh_command for SSH options like
+    # identity file or port.
+    repositories:
+        - YOUR-REPO-ID@YOUR-REPO-ID.repo.borgbase.com:repo
+
+    # Stay in same file system (do not cross mount points). Defaults to false.
+    #one_file_system: true
+
+    # Only store/extract numeric user and group identifiers. Defaults to false.
+    #numeric_owner: true
+
+    # Use Borg&#39;s --read-special flag to allow backup of block and other special
+    # devices. Use with caution, as it will lead to problems if used when
+    # backing up special devices such as /dev/zero. Defaults to false.
+    #read_special: false
+
+    # Record bsdflags (e.g. NODUMP, IMMUTABLE) in archive. Defaults to true.
+    #bsd_flags: true
+
+    # Mode in which to operate the files cache. See
+    # https://borgbackup.readthedocs.io/en/stable/usage/create.html#description for
+    # details. Defaults to &quot;ctime,size,inode&quot;.
+    #files_cache: ctime,size,inode
+
+    # Alternate Borg local executable. Defaults to &quot;borg&quot;.
+    #local_path: borg1
+
+    # Alternate Borg remote executable. Defaults to &quot;borg&quot;.
+    #remote_path: borg1
+
+    # Any paths matching these patterns are included/excluded from backups. Globs are
+    # expanded. (Tildes are not.) Note that Borg considers this option experimental.
+    # See the output of &quot;borg help patterns&quot; for more details. Quote any value if it
+    # contains leading punctuation, so it parses correctly.
+    #patterns:
+    #    - R /
+    #    - &#39;- /home/*/.cache&#39;
+    #    - + /home/susan
+    #    - &#39;- /home/*&#39;
+
+    # Read include/exclude patterns from one or more separate named files, one pattern
+    # per line. Note that Borg considers this option experimental. See the output of
+    # &quot;borg help patterns&quot; for more details.
+    #patterns_from:
+    #    - /etc/borgmatic/patterns
+
+    # Any paths matching these patterns are excluded from backups. Globs and tildes
+    # are expanded. See the output of &quot;borg help patterns&quot; for more details.
+    exclude_patterns:
+        - &#39;*.pyc&#39;
+        - ~/*/.cache
+    #    - /etc/ssl
+
+    # Read exclude patterns from one or more separate named files, one pattern per
+    # line. See the output of &quot;borg help patterns&quot; for more details.
+    #exclude_from:
+    #    - /etc/borgmatic/excludes
+
+    # Exclude directories that contain a CACHEDIR.TAG file. See
+    # http://www.brynosaurus.com/cachedir/spec.html for details. Defaults to false.
+    exclude_caches: true
+
+    # Exclude directories that contain a file with the given filename. Defaults to not
+    # set.
+    exclude_if_present: .nobackup
+
+# Repository storage options. See
+# https://borgbackup.readthedocs.io/en/stable/usage.html#borg-create and
+# https://borgbackup.readthedocs.io/en/stable/usage/general.html#environment-variables for
+# details.
+storage:
+    # The standard output of this command is used to unlock the encryption key. Only
+    # use on repositories that were initialized with passcommand/repokey encryption.
+    # Note that if both encryption_passcommand and encryption_passphrase are set,
+    # then encryption_passphrase takes precedence. Defaults to not set.
+    #encryption_passcommand: secret-tool lookup borg-repository repo-name
+
+    # Passphrase to unlock the encryption key with. Only use on repositories that were
+    # initialized with passphrase/repokey encryption. Quote the value if it contains
+    # punctuation, so it parses correctly. And backslash any quote or backslash
+    # literals as well. Defaults to not set.
+    encryption_passphrase: CHANGE-ME-TO-A-LONG-SECURE-PASSPHRASE
+
+    # Number of seconds between each checkpoint during a long-running backup. See
+    # https://borgbackup.readthedocs.io/en/stable/faq.html#if-a-backup-stops-mid-way-does-the-already-backed-up-data-stay-there
+    # for details. Defaults to checkpoints every 1800 seconds (30 minutes).
+    #checkpoint_interval: 1800
+
+    # Specify the parameters passed to then chunker (CHUNK_MIN_EXP, CHUNK_MAX_EXP,
+    # HASH_MASK_BITS, HASH_WINDOW_SIZE). See https://borgbackup.readthedocs.io/en/stable/internals.html
+    # for details. Defaults to &quot;19,23,21,4095&quot;.
+    #chunker_params: 19,23,21,4095
+
+    # Type of compression to use when creating archives. See
+    # https://borgbackup.readthedocs.org/en/stable/usage.html#borg-create for details.
+    # Defaults to &quot;lz4&quot;.
+    compression: auto,zstd
+
+    # Remote network upload rate limit in kiBytes/second. Defaults to unlimited.
+    #remote_rate_limit: 100
+
+    # Command to use instead of &quot;ssh&quot;. This can be used to specify ssh options.
+    # Defaults to not set.
+    ssh_command: ssh -i /home/johndoe/.ssh/borg_id_ed25519
+
+    # Base path used for various Borg directories. Defaults to $HOME, ~$USER, or ~.
+    # See https://borgbackup.readthedocs.io/en/stable/usage/general.html#environment-variables for details.
+    #borg_base_directory: /path/to/base
+
+    # Path for Borg configuration files. Defaults to $borg_base_directory/.config/borg
+    #borg_config_directory: /path/to/base/config
+
+    # Path for Borg cache files. Defaults to $borg_base_directory/.cache/borg
+    #borg_cache_directory: /path/to/base/cache
+
+    # Path for Borg security and encryption nonce files. Defaults to $borg_base_directory/.config/borg/security
+    #borg_security_directory: /path/to/base/config/security
+
+    # Path for Borg encryption key files. Defaults to $borg_base_directory/.config/borg/keys
+    #borg_keys_directory: /path/to/base/config/keys
+
+    # Umask to be used for borg create. Defaults to 0077.
+    #umask: 0077
+
+    # Maximum seconds to wait for acquiring a repository/cache lock. Defaults to 1.
+    #lock_wait: 5
+
+    # Name of the archive. Borg placeholders can be used. See the output of
+    # &quot;borg help placeholders&quot; for details. Defaults to
+    # &quot;{hostname}-{now:%Y-%m-%dT%H:%M:%S.%f}&quot;. If you specify this option, you must
+    # also specify a prefix in the retention section to avoid accidental pruning of
+    # archives with a different archive name format. And you should also specify a
+    # prefix in the consistency section as well.
+    archive_name_format: &#39;{hostname}-{now}&#39;
+
+# Retention policy for how many backups to keep in each category. See
+# https://borgbackup.readthedocs.org/en/stable/usage.html#borg-prune for details.
+# At least one of the &quot;keep&quot; options is required for pruning to work. See
+# https://torsion.org/borgmatic/docs/how-to/deal-with-very-large-backups/
+# if you&#39;d like to skip pruning entirely.
+retention:
+    # Keep all archives within this time interval.
+    #keep_within: 3H
+
+    # Number of secondly archives to keep.
+    #keep_secondly: 60
+
+    # Number of minutely archives to keep.
+    #keep_minutely: 60
+
+    # Number of hourly archives to keep.
+    #keep_hourly: 24
+
+    # Number of daily archives to keep.
+    keep_daily: 7
+
+    # Number of weekly archives to keep.
+    keep_weekly: 4
+
+    # Number of monthly archives to keep.
+    keep_monthly: 6
+
+    # Number of yearly archives to keep.
+    keep_yearly: 1
+
+    # When pruning, only consider archive names starting with this prefix.
+    # Borg placeholders can be used. See the output of &quot;borg help placeholders&quot; for
+    # details. Defaults to &quot;{hostname}-&quot;.
+    prefix: &#39;{hostname}-&#39;
+
+# Consistency checks to run after backups. See
+# https://borgbackup.readthedocs.org/en/stable/usage.html#borg-check and
+# https://borgbackup.readthedocs.org/en/stable/usage.html#borg-extract for details.
+consistency:
+    # List of one or more consistency checks to run: &quot;repository&quot;, &quot;archives&quot;, and/or
+    # &quot;extract&quot;. Defaults to &quot;repository&quot; and &quot;archives&quot;. Set to &quot;disabled&quot; to disable
+    # all consistency checks. &quot;repository&quot; checks the consistency of the repository,
+    # &quot;archive&quot; checks all of the archives, and &quot;extract&quot; does an extraction dry-run
+    # of the most recent archive.
+    checks:
+        - repository
+        - archives
+
+    # Paths to a subset of the repositories in the location section on which to run
+    # consistency checks. Handy in case some of your repositories are very large, and
+    # so running consistency checks on them would take too long. Defaults to running
+    # consistency checks on all repositories configured in the location section.
+    #check_repositories:
+    #    - user@backupserver:sourcehostname.borg
+
+    # Restrict the number of checked archives to the last n. Applies only to the &quot;archives&quot; check. Defaults to checking all archives.
+    check_last: 3
+
+    # When performing the &quot;archives&quot; check, only consider archive names starting with
+    # this prefix. Borg placeholders can be used. See the output of
+    # &quot;borg help placeholders&quot; for details. Defaults to &quot;{hostname}-&quot;.
+    prefix: &#39;{hostname}-&#39;
+
+# Options for customizing borgmatic&#39;s own output and logging.
+#output:
+    # Apply color to console output. Can be overridden with --no-color command-line
+    # flag. Defaults to true.
+    #color: false
+
+# Shell commands or scripts to execute before and after a backup or if an error has occurred.
+# IMPORTANT: All provided commands and scripts are executed with user permissions of borgmatic.
+# Do not forget to set secure permissions on this file as well as on any script listed (chmod 0700) to
+# prevent potential shell injection or privilege escalation.
+hooks:
+    # List of one or more shell commands or scripts to execute before creating a backup.
+    before_backup:
+        - echo &quot;`date` - Starting backup&quot;
+        - mysqldump --all-databases &gt; /home/johndoe/databases.sql
+
+    # List of one or more shell commands or scripts to execute after creating a backup.
+    after_backup:
+        - echo &quot;`date` - Finished backup&quot;
+        - rm /home/johndoe/databases.sql
+
+    # List of one or more shell commands or scripts to execute in case an exception has occurred.
+    #on_error:
+    #    - echo &quot;Error while creating a backup.&quot;
+
+    # Umask used when executing hooks. Defaults to the umask that borgmatic is run with.
+    #umask: 0077</code></pre>
+<p>Make sure to change the encryption passphrase to a long secure secret and also update the repository addresss. Change the files to backup to suit your specific needs.</p>
+<p>If you want to include your databases in the backup then you can use the before and after hooks (make sure again to change johndoe to the name of your user). If not then just comment out these lines. </p>
+<p>Make sure to backup your passphrase as you won&#39;t be able to decrypt your backups without it.</p>
+<p>Run the following command to check for any configuration errors.</p>
+<pre><code class="language-bash">sudo env &quot;PATH=$PATH&quot; validate-borgmatic-config</code></pre>
+<p>If everything is okay you should see <code>All given configuration files are valid: /etc/borgmatic/config.yaml</code>.</p>
+<h2 id="initialise-the-backup-repository">Initialise the Backup Repository</h2>
+<pre><code class="language-bash">sudo env &quot;PATH=$PATH&quot; borgmatic init --encryption repokey-blake2</code></pre>
+<p>You&#39;ll be asked about the authenticity of the host when connecting for the first time. Check the ECDSA key fingerprint against the one shown in BorgBase by hovering over the fingerprint icon on the repository check the SHA256 to make sure it matches.</p>
+<p>Then enter yes to continue. You&#39;ll see a message saying Repository .... does not exist. This is simply becuase it it the first time you are running the command and it is currently being created.</p>
+<h2 id="creating-your-first-backup">Creating your First Backup</h2>
+<p>To create our first backup we can simply run the following:</p>
+<pre><code class="language-bash">sudo env &quot;PATH=$PATH&quot; borgmatic --verbosity 1</code></pre>
+<p>The verbosity flag simply tells Borgmatic to print out all the files it is adding, quickly check through the list to make sure they all look correct as per your /etc/borgmatic/config.yaml file.</p>
+<h2 id="automating-backups-with-a-cron-job">Automating Backups with a Cron Job</h2>
+<p>Since we&#39;re using sudo to run borgmatic we need to edit our /etc/sudoers file to allow passwordless sudo for that particular command whilst running our cron job.</p>
+<pre><code class="language-bash">sudo visudo</code></pre>
+<p>At the end of the file add the following:</p>
+<pre><code>johndoe ALL=(root) NOPASSWD: /home/johndoe/.local/bin/borgmatic</code></pre><p>This will allow us to run our cron job with sudo and not be prompted for a sudo password.</p>
+<p>To add a new cron job type <code>crontab -e</code> in the terminal.</p>
+<p>Add the following line to the end of the file.</p>
+<pre><code>0 0 * * * sudo /home/johndoe/.local/bin/borgmatic</code></pre><p>This will create a new backup everyday at midnight.</p>
+<h2 id="checking-backups">Checking backups</h2>
+<p>To see all of your backup archives you can run:</p>
+<pre><code class="language-bash">sudo env &quot;PATH=$PATH&quot; borgmatic list</code></pre>
+<p>To see details about usage and the size of archives you can run:</p>
+<pre><code class="language-bash">sudo env &quot;PATH=$PATH&quot; borgmatic info</code></pre>
+<h2 id="restoring-backups">Restoring Backups</h2>
+<p>To restore a backup you need to first get the name of the archive using the above <code>borgmatic list</code> command.</p>
+<p>The list command should display something like this:</p>
+<pre><code>host-2019-01-01T04:05:06.070809      Tue, 2019-01-01 04:05:06 [...]
+host-2019-01-02T04:06:07.080910      Wed, 2019-01-02 04:06:07 [...]</code></pre><p>Then you can simply run:</p>
+<pre><code class="language-bash">sudo env &quot;PATH=$PATH&quot; borgmatic extract --archive host-2019-01-02T04:06:07.080910</code></pre>
+<p>You can also extract specific files by running:</p>
+<pre><code class="language-bash">sudo env &quot;PATH=$PATH&quot; borgmatic extract --archive host-2019-01-02T04:06:07.080910 --restore-path /path/1 /path/2</code></pre>
+<p>More information about extracting repositories and individual files can be found here - <a href="https://torsion.org/borgmatic/docs/how-to/restore-a-backup/">https://torsion.org/borgmatic/docs/how-to/restore-a-backup/</a></p>
+<p>Borg has many more great features you can read about in the official docs here - <a href="https://borgbackup.readthedocs.io/en/stable/">https://borgbackup.readthedocs.io/en/stable/</a></p>
+<p>Hopefully this has given you a quick overview regarding Borg&#39;s features and how simple it can be to set up.</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Building a Static Blog with Nuxt.js and Cockpit Headless CMS - Part 7: Post Comments]]></title>
         <id>https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-7-post-comments</id>
@@ -24,7 +358,7 @@
 <li><a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-5-searching-posts/">Part 5: Searching Posts</a></li>
 <li><a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-6-contact-forms/">Part 6: Contact Forms</a></li>
 </ul>
-<h3 id="comment-sections-on-static-sites">Comment sections on static sites</h3>
+<h2 id="comment-sections-on-static-sites">Comment sections on static sites</h2>
 <p>There are a number of different ways you can go about adding comments to your static site. The most common option is usually by using a third party service and embedding the comments onto your page using an iframe. Some examples are:</p>
 <ul>
 <li><a href="https://disqus.com/">Disqus</a></li>
@@ -32,7 +366,7 @@
 <li><a href="https://just-comments.com">Just Comments</a></li>
 </ul>
 <p>There are also some pretty awesome self-hosted options like <a href="https://commento.io/">Commento</a> (the commenting platform I&#39;m using for this site).</p>
-<h3 id="a-cockpit-comment-system">A Cockpit Comment System</h3>
+<h2 id="a-cockpit-comment-system">A Cockpit Comment System</h2>
 <p>We&#39;re going to take advantage of Cockpit forms and use that as a basis for setting up comments on our blog. </p>
 <p>Here&#39;s how it will work:</p>
 <ol>
@@ -42,7 +376,7 @@
 <li>If approved then our static site will be rebuilt to reflect the change and display the new comment</li>
 </ol>
 <p>There&#39;s quite a lot more going on than that but it should give a basic overview.</p>
-<h3 id="starting-with-cockpit-on-the-backend">Starting With Cockpit on the Backend</h3>
+<h2 id="starting-with-cockpit-on-the-backend">Starting With Cockpit on the Backend</h2>
 <p>To get started we&#39;ll head over to Cockpit and create a new form called comments.</p>
 <div class="blog-image">
 
@@ -56,7 +390,7 @@
 <p>You should receive a notification email but you won&#39;t see a new form entry saved as we set this to false above.</p>
 <p>This new comments form is where new comments will be posted to and saved when they are awaiting approval.</p>
 <p>Once approved we will be deleting the entry from here, but more on that later.</p>
-<h3 id="creating-a-new-comments-collection">Creating a New Comments Collection</h3>
+<h2 id="creating-a-new-comments-collection">Creating a New Comments Collection</h2>
 <p>When we approve a comment we are going to save it as a new collection entry and remove its entry from the comments form.</p>
 <p>This will allow us to create a collectionLink (relationship) between our post and the comments for that post.</p>
 <p>That way when we fetch our posts data from Cockpit we can also fetch the comments belonging to each post at the same time.</p>
@@ -81,7 +415,7 @@
 <p><img src="https://api.willbrowning.me/storage/uploads/2019/04/05/5ca751fae052ccockpit-comments-collection.png" alt="Cockpit Comments Collection"></p>
 </div>
 
-<h3 id="updating-our-posts-collection">Updating Our Posts Collection</h3>
+<h2 id="updating-our-posts-collection">Updating Our Posts Collection</h2>
 <p>If you&#39;ve been following along with this series you should already have a posts collection set up. If not I show you how in my first post of the series <a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-1-setup/">here</a>.</p>
 <p>We need to add a new collectionLink field called <code>comments</code> with the following options:</p>
 <pre><code class="language-json">{
@@ -98,7 +432,7 @@
 </div>
 
 <p>Okay so we&#39;ve created a new comments form, a comments collection and updated our posts collection. Next we need to look at how we go about approving new comments that arrive in our comments form.</p>
-<h3 id="approving-the-new-comment-with-a-custom-endpoint">Approving The New Comment With a Custom Endpoint</h3>
+<h2 id="approving-the-new-comment-with-a-custom-endpoint">Approving The New Comment With a Custom Endpoint</h2>
 <p>When a new comment is made we need to be able to moderate it first before it is published to the site, that&#39;s why we keep all pending comments in our comments form first.</p>
 <p>We&#39;re going to create a new custom endpoint in Cockpit that will allow us to simply click a link and approve a comment.</p>
 <p>We first need to add a new custom API key that only has permission to approve comments. So head over to settings, API Access and add a new key with the following in the rules section <code>/api/forms/approve/comments</code>. We don&#39;t want to share this key with anyone.</p>
@@ -159,7 +493,7 @@ $this-&gt;reroute($this-&gt;baseUrl(&#39;/collections/entries/comments&#39;));</
 <p>Then find the post that this pending comment belongs to. Then we save the new comment in the comments collection and create a collectionLink to the post.</p>
 <p>We then update the post so that it also has a collectionLink to the new comment.</p>
 <p>Finally we remove the form entry and redirect to the comments collection page.</p>
-<h3 id="saving-the-form-entry">Saving The Form Entry</h3>
+<h2 id="saving-the-form-entry">Saving The Form Entry</h2>
 <p>We&#39;re going to need to access our approve comment form API key in the next file we create. To avoid hard coding it and potentially accidently committing it to version control we will create a <code>.env</code> file in our Cockpit root directory. Inside this <code>.env</code> file enter:</p>
 <pre><code>APPROVE_TOKEN=xxxxxx
 SITE_URL=https://cms.yourdomain.com</code></pre><p>Making sure to replace xxxx with your actual &quot;approve comment&quot; api key from above and <code>SITE_URL</code> with the url of your Cockpit site (no trailing slash).</p>
@@ -189,7 +523,7 @@ $app-&gt;on(&quot;forms.submit.before&quot;, function($form, &amp;$data, $frm, &
 <p>If it does then we add <code>post_title</code> to the data and then save the submission as a new entry. That is why when we created the comments form above we made sure to set <code>save form data</code> as false, otherwise it would save the entry twice.</p>
 <p>You might be wondering why I&#39;m saving the form entry now when it could have been saved anyway if we had just set <code>save form data</code> to true. The answer to that is because we need the <code>_id</code> of this entry so we can pass it through to our notification email and use it in our approve endpoint.</p>
 <p>So after we save the entry we can retrieve its <code>_id</code> and add <code>$data[&#39;id&#39;]</code> to our data so we can use it in our email template along with our <code>SITE_URL</code> and <code>APPROVE_TOKEN</code> from our <code>.env</code> file.</p>
-<h3 id="creating-a-custom-email-notification-template">Creating a Custom Email Notification Template</h3>
+<h2 id="creating-a-custom-email-notification-template">Creating a Custom Email Notification Template</h2>
 <p>In Cockpit you can create custom email templates to override the default one. To do this you simply create a new file at <code>config/forms/emails/</code> with the same name as the form you wish to override.</p>
 <p>In our case we need to create one called <code>comments.php</code>, once created add the following:</p>
 <pre><code class="language-php">@if( isset($data[&#39;post_title&#39;]) )
@@ -230,7 +564,7 @@ or
 &lt;a href=&quot;{{ getenv(&#39;SITE_URL&#39;) }}/forms/entries/comments&quot;&gt;View and delete it&lt;/a&gt;</code></pre>
 <p>All we are doing here is using the data to create an email that will tell us who made the comment, the comment itself and allow us to click a link to approve the comment.</p>
 <p>It is <strong>important</strong> to make sure you include <code>htmlspecialchars($var, ENT_QUOTES, &#39;UTF-8&#39;, true)</code> to protect ourselves against a comment containing malicious scripts etc.</p>
-<h3 id="testing-the-template-and-approval">Testing The Template and Approval</h3>
+<h2 id="testing-the-template-and-approval">Testing The Template and Approval</h2>
 <p>Now if you send a post request to submit the comments form with the correct data making sure you replace the <code>post_id</code> with the ID of one of your blog posts otherwise you won&#39;t be able to approve it. </p>
 <pre><code class="language-json">{
     &quot;form&quot;: {
@@ -259,7 +593,7 @@ or
 <p>The <code>populate</code> option is important as it tells Cockpit to return and populate relationships 1 level deep. You should see in the response that each post has a <code>&quot;comments&quot;: []</code> array. If you find the blog post you added the comment to you should see the comment there.</p>
 <p>If you set populate to <code>-1</code> it will populate to infinite levels, however it can cause some issues and errors. </p>
 <p>Try setting populate to 0 or removing it and you&#39;ll notice that you won&#39;t get all fields returned for your comment.</p>
-<h3 id="creating-a-new-custom-email-template-for-comment-replies">Creating a New Custom Email Template For Comment Replies</h3>
+<h2 id="creating-a-new-custom-email-template-for-comment-replies">Creating a New Custom Email Template For Comment Replies</h2>
 <p>Okay so we can now add a comment using our form and then approve the comment but how about comment replies and notifying the parent comment?</p>
 <p>Well first off we need to create a new custom email template, so in <code>config/forms/emails</code> create a new file called <code>notify_reply.php</code> and add the following inside:</p>
 <pre><code class="language-php">@if( isset($data[&#39;post_title&#39;]) )
@@ -286,7 +620,7 @@ Your comment has a new reply on &lt;b&gt;{{ $data[&#39;post_title&#39;] }}&lt;/b
 &lt;a href=&quot;{{ $data[&#39;post_url&#39;] }}&quot;&gt;Click here to view the comment&lt;/a&gt;
 @endif</code></pre>
 <p>Again be sure to <strong>include</strong> <code>htmlspecialchars()</code> here! We&#39;ll pass all this data through to this template when we actually come to send the email.</p>
-<h3 id="notifying-the-parent-comment-of-new-replies">Notifying The Parent Comment of New Replies</h3>
+<h2 id="notifying-the-parent-comment-of-new-replies">Notifying The Parent Comment of New Replies</h2>
 <p>Now let&#39;s add the actual code that will send an email to the parent comment when it receives a reply and that reply is approved.</p>
 <p>Just before we do open up your <code>.env</code> file and add the following:</p>
 <pre><code>FRONTEND_URL=https://yourdomain.com</code></pre><p>Note that there is no trailing slash. We&#39;ll be using this to create the url for the blog post with its <code>title_slug</code> e.g. <code>https://yourdomain.com/first-blog-post</code>.</p>
@@ -328,7 +662,7 @@ return (isset($response) &amp;&amp; $response !== true) ? [&#39;error&#39; =&gt;
 <p>So what we&#39;re doing here is first checking to see if the comment has a <code>parent_id</code> value set, if it does and we find a comment with that ID in our database then check to see if the parent comment had <code>notify_replies</code> set to true.</p>
 <p>If it does then we check if the parent comment&#39;s email is valid and if we have a custom template available called <code>notify_reply.php</code> (we do as we just created it).</p>
 <p>Then we pass the data through to the template and attempt to send the email using our mailer.</p>
-<h3 id="testing-the-comment-reply-notification">Testing The Comment Reply Notification</h3>
+<h2 id="testing-the-comment-reply-notification">Testing The Comment Reply Notification</h2>
 <p>If you used one of your real email addresses and set <code>notify_replies</code> to true when testing the comment approval above then we can now try and reply to this comment.</p>
 <p>So first we need to find out the ID for the comment we would like to reply to, to do this you can make a GET request like above to your posts collection endpoint and find the post with the comment, then copy the ID for the comment.</p>
 <p>Now we can make another form submission with the following data:</p>
@@ -344,7 +678,7 @@ return (isset($response) &amp;&amp; $response !== true) ? [&#39;error&#39; =&gt;
 }</code></pre>
 <p>Making sure to use the same <code>post_id</code> as before and the <code>parent_id</code> as the ID we just copied from the first comment.</p>
 <p>You should receive the email notification to confirm or view/delete the comment entry. Once you click approve you should then receive an email to the parent comment&#39;s email address letting you know your comment has a new reply.</p>
-<h3 id="server-side-validation">Server Side Validation</h3>
+<h2 id="server-side-validation">Server Side Validation</h2>
 <p>Let&#39;s finish up the backend by adding some server side validation for our comments form.</p>
 <p>If you&#39;ve read the previous post about contact forms you&#39;ll know how to do this. Create a new file at <code>config/forms/</code> called <code>comments.php</code> (it must have the same name as the one we gave our form).</p>
 <pre><code class="language-php">&lt;?php
@@ -381,7 +715,7 @@ if (!is_bool($data[&#39;notify_replies&#39;])) {
 return true;</code></pre>
 <p>So we simply validate our comment form fields, we&#39;re going to use <code>website</code> as a honeypot field to catch bots like we did in the previous post. If the spam bot accidentally automatically fills in the website field we will return false.</p>
 <p>So I think we&#39;ve finished up setting the Cockpit side of the comment system up, let&#39;s now look at the Nuxt frontend. </p>
-<h3 id="updating-our-nuxt-env-and-config">Updating Our Nuxt .env and Config</h3>
+<h2 id="updating-our-nuxt-env-and-config">Updating Our Nuxt .env and Config</h2>
 <p>Moving on to Nuxt.js and our frontend let&#39;s first update our Nuxt .env file and add our <code>FORMS_TOKEN</code>. If you&#39;ve followed the previous post you should already have this.</p>
 <p>Next open up nuxt.config.js and in the env property add:</p>
 <pre><code class="language-javascript">env: {
@@ -393,7 +727,7 @@ return true;</code></pre>
 </div>  
 
 <p>So make sure not to include any sensitive API keys here. We obviously need the form endpoint and token to be public otherwise we won&#39;t be able to submit new comments from the frontend.</p>
-<h3 id="updating-the-blog-post-page">Updating The Blog Post Page</h3>
+<h2 id="updating-the-blog-post-page">Updating The Blog Post Page</h2>
 <p>Open up your <code>_title_slug.vue</code> page (the individual blog page) and update it to resemble the following:</p>
 <pre><code class="language-html">&lt;template&gt;
   &lt;section&gt;
@@ -481,7 +815,7 @@ export default {
 <p>At first I had comments set up with a collectionLink relationship to themselves so comments could have children and a parent. However I ran into issues whilst fetching the data relating to <code>populate</code> in the request and the depth it should be carried out to. For example if setting <code>populate: -1</code> in the request it would cause timeout errors for me.</p>
 <p>So I decided instead to keep it simple and just add a parent_id to any child comment that references the ID of its parent.</p>
 <p>That way I can organise the comments correctly in Nuxt by filtering only the parent comments and then recursively finding their children if they have any.</p>
-<h3 id="the-comment-form-component">The Comment Form Component</h3>
+<h2 id="the-comment-form-component">The Comment Form Component</h2>
 <p>In your components directory create a new file called <code>CommentForm.vue</code> and add the following inside:</p>
 <pre><code class="language-html">&lt;template&gt;
   &lt;form @submit=&quot;checkForm&quot; method=&quot;post&quot; :id=&quot;parent_id ? `reply-${parent_id}` : &#39;&#39;&quot;&gt;
@@ -614,7 +948,7 @@ export default {
 <p>We need to import axios here as we&#39;re now calling it on the client side so can&#39;t use <code>app.$axios</code> as when in the <code>asyncData</code> function.</p>
 <p>The form has some simple client side validation like our comment form and also the same  honeypot field called website.</p>
 <p>If the form submission has any errors we display them and if it&#39;s successful we display a success message.</p>
-<h3 id="the-recursive-comment-component">The Recursive Comment Component</h3>
+<h2 id="the-recursive-comment-component">The Recursive Comment Component</h2>
 <p>Now onto the Comment component, create a new file in the components directory called <code>Comment.vue</code> and add the following:</p>
 <pre><code class="language-html">&lt;template&gt;
   &lt;li class=&quot;mb-4&quot; :class=&quot;!parent ? &#39;border-b-2&#39; : &#39;&#39;&quot;&gt;
@@ -732,7 +1066,7 @@ export default {
 <p><img src="https://api.willbrowning.me/storage/uploads/2019/04/09/5cac81a3e803dstatic-blog-comment-reply.png" alt="Static Blog Comment Reply"></p>
 </div>
 
-<h3 id="sanitizing-the-markdown">Sanitizing The Markdown</h3>
+<h2 id="sanitizing-the-markdown">Sanitizing The Markdown</h2>
 <p>As I mentioned above you cannot simply pass user inputted data through v-html as it will be rendered as actual html on the page. So if a user made a comment with this content:</p>
 <pre><code class="language-html">&lt;script&gt;alert(&#39;Hello&#39;);&lt;/script&gt;</code></pre>
 <p>And we approved it, then whenever anybody visited the blog post with that comment on they would get an alert popup! You can read more about XSS attacks <a href="https://www.owasp.org/index.php/Cross-site_Scripting_(XSS)">here</a>.</p>
@@ -755,7 +1089,7 @@ export default {
 
 <p>If you want to test your sanitization is working as it should be try posting a comment with the content from this <a href="https://github.com/ismailtasdelen/xss-payload-list">xss-payload-list</a>. </p>
 <p>SanitzeHtml seems to cope with this XSS payload well and mitigates all attempted attacks.</p>
-<h3 id="adding-a-little-styling">Adding a Little Styling</h3>
+<h2 id="adding-a-little-styling">Adding a Little Styling</h2>
 <p>Let&#39;s add a tiny bit of css for our comments, so update your main.css to the following:</p>
 <pre><code class="language-css">@tailwind preflight;
 
@@ -830,7 +1164,7 @@ table th, table td {
 <p><img src="https://api.willbrowning.me/storage/uploads/2019/04/09/5cac8cd2eaa9bstatic-blog-comments.png" alt="Static Blog Comments"></p>
 </div>
 
-<h3 id="adding-hooks-in-cockpit-for-when-deleting-comments-or-a-post">Adding Hooks in Cockpit For When Deleting Comments or a Post</h3>
+<h2 id="adding-hooks-in-cockpit-for-when-deleting-comments-or-a-post">Adding Hooks in Cockpit For When Deleting Comments or a Post</h2>
 <p>With our collectionLink between a post and its comments if you delete a comment we would like the deleted comment to be &quot;unlinked&quot; from the post.</p>
 <p>This doesn&#39;t seem to happen by default so we need to add a <code>collections.remove.before.comments</code> hook to do it for us.</p>
 <p>So in <code>config/bootstrap.php</code> add the following code:</p>
@@ -885,7 +1219,7 @@ foreach($post[&#39;comments&#39;] as $item){
     // delete each linked comment
     cockpit(&#39;collections&#39;)-&gt;remove(&#39;comments&#39;, [&#39;_id&#39; =&gt; $item[&#39;_id&#39;]]);
 }</code></pre>
-<h3 id="adding-comment-count-to-posts">Adding Comment Count to Posts</h3>
+<h2 id="adding-comment-count-to-posts">Adding Comment Count to Posts</h2>
 <p>To add a little comment count to the top of each post you can edit a small part of the following files - <code>index.vue</code>, <code>_page.vue</code> and <code>_tag.vue</code> to the following:</p>
 <pre><code class="language-html">&lt;div class=&quot;text-grey-dark font-bold text-sm tracking-wide&quot;&gt;
   {{ post._created | toDate }}
@@ -918,7 +1252,7 @@ foreach($post[&#39;comments&#39;] as $item){
 <p><img src="https://api.willbrowning.me/storage/uploads/2019/04/09/5caccbcc5a5f2static-blog-comment-count.png" alt="Static Blog Comment Count"></p>
 </div>
 
-<h3 id="closing-thoughts">Closing Thoughts</h3>
+<h2 id="closing-thoughts">Closing Thoughts</h2>
 <p>This is only a basic example of a comment system and it could definitely be greatly improved but hopefully it gives you some ideas on what you can do with Cockpit.</p>
 <p>Now whenever a new comment is approved Cockpit will automatically fire our rebuild webhook from <a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-3-deployment">part 3</a> of this series and run <code>npm run generate</code> again for our site!</p>
 <p>If you notice any problems or can think of any improvements for this post feel free to add a comment or open an issue on Github.</p>
@@ -941,7 +1275,7 @@ foreach($post[&#39;comments&#39;] as $item){
 <li><a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-4-post-pagination">Part 4: Post Pagination</a></li>
 <li><a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-5-searching-posts/">Part 5: Searching Posts</a></li>
 </ul>
-<h3 id="handling-forms-on-static-sites">Handling Forms on Static Sites</h3>
+<h2 id="handling-forms-on-static-sites">Handling Forms on Static Sites</h2>
 <p>There are a number of different ways you can go about handling forms on static sites, including:</p>
 <ul>
 <li>Netlify</li>
@@ -952,7 +1286,7 @@ foreach($post[&#39;comments&#39;] as $item){
 <p>Cockpit comes with its own solution that can help us add forms to our site using simple API POST requests to handle submissions.</p>
 <p>Submissions made through the API can be viewed in the Cockpit dashboard and also notify you via email when a new submission is made.</p>
 <p>You can read more about Cockpit forms in the documentation <a href="https://getcockpit.com/documentation/modules/forms">here</a>.</p>
-<h3 id="adding-a-new-api-token">Adding a New API Token</h3>
+<h2 id="adding-a-new-api-token">Adding a New API Token</h2>
 <p>First things first we need to generate a new API token in Cockpit and also make sure it only has permissions to hit the forms endpoint.</p>
 <p>So head over to Cockpit and go to Settings then API Access. Click the little plus icon to add a new key and add the following to the rules field: <code>/api/forms/submit/*</code>.</p>
 <div class="blog-image">
@@ -961,7 +1295,7 @@ foreach($post[&#39;comments&#39;] as $item){
 </div>
 
 <p>Now this key will only be able to perform form submissions.</p>
-<h3 id="creating-a-new-form-in-cockpit">Creating a New Form in Cockpit</h3>
+<h2 id="creating-a-new-form-in-cockpit">Creating a New Form in Cockpit</h2>
 <p>In order for Cockpit to handle submissions we first need to create a new form. So from the dashboard click on forms and then click &#39;Create one&#39;.</p>
 <p>Give it a name like <code>contact</code> and a label of <code>Contact Form</code>. Add your email if you wish to be notified when new submissions are made. Turn on &#39;Save form data&#39; if you would like to be able to view submission entries from Cockpit.</p>
 <div class="blog-image">
@@ -970,7 +1304,7 @@ foreach($post[&#39;comments&#39;] as $item){
 </div>
 
 <p>Now that we&#39;ve created our contact form in Cockpit we can test it by sending a POST request to the right endpoint.</p>
-<h3 id="updating-cockpit-mailer-config">Updating Cockpit Mailer Config</h3>
+<h2 id="updating-cockpit-mailer-config">Updating Cockpit Mailer Config</h2>
 <p>Before we can test out our form we need to update our Mailer config and add some SMTP details. Go to settings and then click on settings and add SMTP details for the email address you&#39;d like to use.</p>
 <blockquote>
 <p>If you didn&#39;t enter an email when creating the form above you can skip adding SMTP details</p>
@@ -991,7 +1325,7 @@ mailer:
 <p><img src="https://api.willbrowning.me/storage/uploads/2019/03/07/5c812ddc7fdc3cockpit-mailer-config.png" alt="Cockpit Mailer Config"></p>
 </div>
 
-<h3 id="testing-our-contact-form">Testing Our Contact Form</h3>
+<h2 id="testing-our-contact-form">Testing Our Contact Form</h2>
 <p>If you have <a href="https://www.getpostman.com/">Postman</a> or <a href="https://insomnia.rest/">Insomnia</a> installed you can easily send a POST request to your Cockpit endpoint.</p>
 <p>The endpoint we need to use is <code>cms.yourdomain.com/api/forms/submit/contact?token=xxx</code> where token is the API Key we created above to use for our form.</p>
 <p>Make sure to set a header with Content-Type as <code>application/json</code> and then set the request body as the following JSON:</p>
@@ -1018,7 +1352,7 @@ mailer:
   }
 }</code></pre>
 <p>If you head to <code>cms.yourdomain.com/forms/entries/contact</code> you should now see the entry we just submitted via the API. You should also have received an email with the form submission details.</p>
-<h3 id="updating-our-blogs-environment-variables">Updating Our Blogs Environment Variables</h3>
+<h2 id="updating-our-blogs-environment-variables">Updating Our Blogs Environment Variables</h2>
 <p>Open up your .env file for Nuxt and add a new variable called FORMS_TOKEN.</p>
 <pre><code>FORMS_TOKEN=xxxxxxxxxxxxxx</code></pre><p>Now we also need to update the env property in our nuxt.config.js. Add the following anywhere inside module.exports = { ... }</p>
 <pre><code class="language-javascript">env: {
@@ -1039,7 +1373,7 @@ PER_PAGE=${process.env.PER_PAGE}\n
 SEARCH_URL=${process.env.SEARCH_URL}\n
 FORMS_TOKEN=${process.env.FORMS_TOKEN}
 `)</code></pre>
-<h3 id="adding-the-contact-page">Adding the Contact Page</h3>
+<h2 id="adding-the-contact-page">Adding the Contact Page</h2>
 <p>Now that we know our contact form is working as expected we can go and set it up in our blog.</p>
 <p>First we&#39;ll just update our PageNav.vue component to add a link to the new page:</p>
 <pre><code class="language-html">&lt;template&gt;
@@ -1179,7 +1513,7 @@ export default {
 <p>If there are no client side validation errors then we call the submitForm method and use axios to make a POST request to our <code>contactUrl</code> endpoint. Then we simply display some text with a success message or an error if there is one present.</p>
 <p>If no error is present we check if an entry has been returned with name, email and message details (this is what happens when a form is succesfully submitted).</p>
 <p>You can fire up your local site using <code>npm run dev</code> and test this contact form out. You should receive an email notification and be able to see the entry in Cockpit.</p>
-<h3 id="adding-server-side-validation">Adding Server Side Validation</h3>
+<h2 id="adding-server-side-validation">Adding Server Side Validation</h2>
 <p>At the moment we only have validation for our form fields on the client side which can be circumvented, we need to also add validation for our fields in Cockpit.</p>
 <p>We can add custom validation for our form fields in Cockpit by creating a new file with the same name as our form (in our case <code>contact</code>) in the config/forms directory. You will need to create the forms directory first.</p>
 <p>Then make a new file called <code>contact.php</code> and put the following inside:</p>
@@ -1225,7 +1559,7 @@ return true;</code></pre>
   e.preventDefault()
 },</code></pre>
 <p>Now if you&#39;ve added the contact.php file correctly you should notice that the response is returned with an error message if validation fails on the server. You shouldn&#39;t receive a notification email and there should not be a new entry visible in Cockpit.</p>
-<h3 id="spam-prevention">Spam Prevention</h3>
+<h2 id="spam-prevention">Spam Prevention</h2>
 <p>If you have any kind of contact form on your site it is very likely you will have received spam from automated bots.</p>
 <p>To help prevent this you can add a Google reCAPTCHA to your site/form.</p>
 <p>If you&#39;d rather not use reCAPTCHA another simple method is available known as a Honeypot trap.</p>
@@ -1362,7 +1696,7 @@ return true;</code></pre>
 <li><a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-3-deployment/">Part 3: Deployment</a></li>
 <li><a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-4-post-pagination">Part 4: Post Pagination</a></li>
 </ul>
-<h3 id="adding-live-search-on-a-static-blog">Adding Live Search on a Static Blog</h3>
+<h2 id="adding-live-search-on-a-static-blog">Adding Live Search on a Static Blog</h2>
 <p>Typically when searching for something you would submit a form that would then be sent to a backend which would then query a database and return the results.</p>
 <p>If you want to implement live searching you need to send requests in real time as the user is typing so results can be displayed almost immediately.</p>
 <p>Since our site is just a static blog made up of plain old HTML, CSS and Javascript we&#39;ll need to send requests elsewhere to get our search results.</p>
@@ -1394,11 +1728,11 @@ detektivo:
 
 <p>Read more about record size limits here - <a href="https://www.algolia.com/doc/faq/basics/is-there-a-size-limit-for-my-index-records/">https://www.algolia.com/doc/faq/basics/is-there-a-size-limit-for-my-index-records/</a></p>
 <p>It is probably best to do just the title, title_slug and excerpt fields to be on the safe side.</p>
-<h3 id="adding-our-posts-index-to-algolia">Adding Our Posts Index to Algolia</h3>
+<h2 id="adding-our-posts-index-to-algolia">Adding Our Posts Index to Algolia</h2>
 <p>Whilst logged in to Algolia create a new index and call it <code>posts</code>. There won&#39;t be any records here yet as we have not added them.</p>
 <p>In Algolia you can add records in three different ways; manually, by file upload or via the API.</p>
 <p>We&#39;ll be using the API which is why we needed to add our Admin Key in our Cockpit configuration.</p>
-<h3 id="adding-our-posts-to-algolia">Adding Our Posts to Algolia</h3>
+<h2 id="adding-our-posts-to-algolia">Adding Our Posts to Algolia</h2>
 <p>If you head back over to Cockpit and click on the menu you should see a new item under &#39;DETEKTIVO&#39; called Manage Index, click on it.</p>
 <div class="blog-image">
 
@@ -1414,7 +1748,7 @@ detektivo:
 <p>The endpoint we&#39;ll be using with Detektivo will be <code>cms.yourdomain.com/api/detektivo/collection/posts?token=&lt;COCKPIT-SEARCH-API-KEY&gt;&amp;q={searchterm}</code></p>
 <p>Where <code>&lt;COCKPIT-SEARCH-API-KEY&gt;</code> is a key we&#39;ve yet to create.</p>
 <p>The great thing about the Detektivo addon is that each time you add/update/delete a post it automatically updates our posts index at Algolia for us.</p>
-<h3 id="adding-a-search-only-api-key-in-cockpit">Adding a Search-Only API Key in Cockpit</h3>
+<h2 id="adding-a-search-only-api-key-in-cockpit">Adding a Search-Only API Key in Cockpit</h2>
 <p>We need to create a new API key in Cockpit however we need to make sure it only has permissions to perform searches on our posts collection and nothing else. That is because the key will be public and exposed in each request made.</p>
 <p>We <code>MUST NOT</code> use our MASTER API-KEY or any other Key we&#39;ve previously created in Cockpit.</p>
 <p>So head over to Settings then API Access in Cockpit and click the little plus icon to generate a new API Key.</p>
@@ -1426,7 +1760,7 @@ detektivo:
 
 <p>This rule means only requests made to that endpoint with the key will be authorised.</p>
 <p>Now if you make a get request to the endpoint mentioned above with a search term you know exists in the title of one of your posts you should see some results returned.</p>
-<h3 id="updating-our-blogs-environment-variables">Updating Our Blogs Environment Variables</h3>
+<h2 id="updating-our-blogs-environment-variables">Updating Our Blogs Environment Variables</h2>
 <p>Open up your .env file for Nuxt and add a new variable called SEARCH_URL.</p>
 <pre><code>SEARCH_URL=https://cms.yourdomain.com/api/detektivo/collection/posts?token=*COCKPIT-SEARCH-API-KEY*&amp;q=</code></pre><p>Now we also need to update our nuxt.config.js and add an env property. Add the following anywhere inside module.exports = { ... }</p>
 <pre><code class="language-javascript">env: {
@@ -1447,7 +1781,7 @@ URL=${process.env.URL}\n
 PER_PAGE=${process.env.PER_PAGE}\n
 SEARCH_URL=${process.env.SEARCH_URL}
 `)</code></pre>
-<h3 id="adding-a-new-search-page">Adding a New Search Page</h3>
+<h2 id="adding-a-new-search-page">Adding a New Search Page</h2>
 <p>First we&#39;ll just update our PageNav.vue component to add a link to the new page:</p>
 <pre><code class="language-html">&lt;template&gt;
   &lt;nav class=&quot;text-center my-4&quot;&gt;
@@ -1516,7 +1850,7 @@ export default {
 &lt;/script&gt;</code></pre>
 <p>So what we&#39;re doing here is simply telling Nuxt to watch the searchTerm variable and to call the search method when it changes. If it has a length longer than 2 we will make a call to Cockpit to fetch the search results.</p>
 <p>These results are then displayed and they use the title_slug as the url for the link.</p>
-<h3 id="adding-highlighting-for-results">Adding Highlighting for Results</h3>
+<h2 id="adding-highlighting-for-results">Adding Highlighting for Results</h2>
 <p>To improve these results we could add highlighting by changing <code>{{ result.title }}</code> to:</p>
 <pre><code class="language-html">&lt;span v-html=&quot;result._highlightResult.title.value&quot;&gt;&lt;/span&gt;</code></pre>
 <p>To make this work you first need to go to Algolia and add the title to <code>Attributes to highlight</code> in Pagination and Display &gt; Highlighting.</p>
@@ -1529,7 +1863,7 @@ export default {
 }</code></pre>
 <p>I&#39;ve added a purgecss ignore comment here to make sure this css isn&#39;t removed when we build the site because <code>.search-results em</code> will not actually exist at build time as it is only present if we search on the client side so the css would be removed otherwise.</p>
 <p>We could also add highlighting for the post excerpt. However the excerpt may be too long so we don&#39;t want to display the whole thing in the results. </p>
-<h3 id="snippeting-the-post-excerpt">Snippeting The Post Excerpt</h3>
+<h2 id="snippeting-the-post-excerpt">Snippeting The Post Excerpt</h2>
 <p>Algolia offers a feature called snippeting that allows us to only display a snippet of text around the matched word(s).</p>
 <p>If you visit Attributes to snippet in Algolia and add <code>excerpt</code> then you can update the html to the following:</p>
 <pre><code class="language-html">&lt;template&gt;
@@ -1584,7 +1918,7 @@ export default {
 <li><a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-2-dynamic-routes">Part 2: Dynamic Routes</a></li>
 <li><a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-3-deployment/">Part 3: Deployment</a></li>
 </ul>
-<h3 id="adding-pagination-to-our-blog">Adding Pagination to our Blog</h3>
+<h2 id="adding-pagination-to-our-blog">Adding Pagination to our Blog</h2>
 <p>Open up your .env file and add the following variable to it </p>
 <pre><code class="language-env">PER_PAGE=2</code></pre>
 <p>We&#39;re setting it low on purpose so we can easily see the pagination in action. </p>
@@ -1615,7 +1949,7 @@ export default {
 <p>Next we chunk the 15 posts we&#39;ve got by the <code>perPage</code> variable, so we would have 10 and 5 in two chunks.</p>
 <p>Then we simply map these items into their respective pages, where <code>currentPage</code> is the key that we add 2 onto since the first chunk will have a key of 0 however we want this to effectively be our page 2 (as we&#39;re going to count our home page as page 1).</p>
 <p>We pass the post items in each chunk as the payload to use and we also pass a <code>hasNext</code> variable that lets us know if there is another page or not. In our example here <code>data.total</code> is 25 as there are 25 posts in total. When we&#39;re in the second chunk that contains 5 posts the  chunk key will be 1 so we have (1 + 2)*10 which is 30. So <code>hasNext</code> will evaluate to false.</p>
-<h3 id="adding-the-blog-page">Adding the Blog Page</h3>
+<h2 id="adding-the-blog-page">Adding the Blog Page</h2>
 <p>We&#39;re going to set our blog up so that pages are found at <code>yourdomain.com/blog/2</code> etc. You can instead do <code>yourdomain.com/2</code>, <code>yourdomain.com/blog/page-2</code> or whatever you prefer.</p>
 <p>In the pages directory create a new folder called <code>blog</code> and add a file named <code>_page.vue</code> to it. Put the following code inside:</p>
 <pre><code class="language-html">&lt;template&gt;
@@ -1749,7 +2083,7 @@ export default {
 <p><img src="https://api.willbrowning.me/storage/uploads/2018/11/12/5be984f90c881nuxt-pagination.png" alt="Nuxt Pagination"></p>
 </div>
 
-<h3 id="update-our-netlify-script">Update our Netlify Script</h3>
+<h2 id="update-our-netlify-script">Update our Netlify Script</h2>
 <p>We also need to remember to update our <code>create-env.js</code> file for Netlify.</p>
 <pre><code class="language-javascript">const fs = require(&#39;fs&#39;)
 fs.writeFileSync(&#39;./.env&#39;, `
@@ -1760,7 +2094,7 @@ URL=${process.env.URL}\n
 PER_PAGE=${process.env.PER_PAGE}
 `)</code></pre>
 <p>Make sure to update your environment variables when you are logged into Netlify like we did in Part 3 so that <code>PER_PAGE</code> is included.</p>
-<h3 id="updating-our-sitemap">Updating our Sitemap</h3>
+<h2 id="updating-our-sitemap">Updating our Sitemap</h2>
 <p>We also need to update our sitemap otherwise it won&#39;t be aware of our new blog pages so open up nuxt.config.js and update it to the following:</p>
 <pre><code class="language-javascript">sitemap: {
   path: &#39;/sitemap.xml&#39;,
@@ -1814,7 +2148,7 @@ PER_PAGE=${process.env.PER_PAGE}
         <updated>2018-10-26T10:23:49Z</updated>
         <summary type="html"><![CDATA[In this post we'll carry on from the previous one regarding sharing cookies with a subdomain and use what we learned to build a simple referral system to track who has referred users when they register on the site.]]></summary>
         <content type="html"><![CDATA[<p>This post is a continuation of <a href="https://willbrowning.me/sharing-cookies-with-subdomains-in-laravel/">Sharing Cookies with Subdomains in Laravel</a> so if you have not read that please go and check it out.</p>
-<h3 id="adding-authentication-to-our-subdomain">Adding Authentication to our Subdomain</h3>
+<h2 id="adding-authentication-to-our-subdomain">Adding Authentication to our Subdomain</h2>
 <p>In the example we&#39;re making here I&#39;ll be adding authentication to <code>app.example.test</code> and we&#39;ll be treating <code>example.test</code> as the marketing frontend for our application.</p>
 <p>So let&#39;s edit our Homestead.yaml file and add a database we can use for our authentication.</p>
 <pre><code class="language-yaml">databases:
@@ -1828,7 +2162,7 @@ PER_PAGE=${process.env.PER_PAGE}
 <p><img src="https://api.willbrowning.me/storage/uploads/2018/10/26/5bd2eaf94690bregister-example.png" alt="Register Example"> </p>
 </div>
 
-<h3 id="creating-middleware-to-set-our-cookie">Creating Middleware to Set our Cookie</h3>
+<h2 id="creating-middleware-to-set-our-cookie">Creating Middleware to Set our Cookie</h2>
 <p>In our <code>example.test</code> code create some new Middleware called <code>CheckReferral</code>.</p>
 <pre><code class="language-bash">php artisan make:middleware CheckReferral</code></pre>
 <p>Open up the newly created file and edit the handle function.</p>
@@ -1861,7 +2195,7 @@ PER_PAGE=${process.env.PER_PAGE}
     ],
 ];</code></pre>
 <p>If you only wanted to check and set the cookie on the homepage you could simply add it to the $routeMiddleware property instead and then call it for the <code>&#39;/&#39;</code> route in web.php.</p>
-<h3 id="checking-our-cookie-is-being-set">Checking our Cookie is Being Set</h3>
+<h2 id="checking-our-cookie-is-being-set">Checking our Cookie is Being Set</h2>
 <p>If you remember from the previous post we had a route <code>/cookie</code> to check if the cookie had been set. Let&#39;s edit web.php and update this:</p>
 <pre><code class="language-php">Route::get(&#39;/&#39;, function () {
     //Cookie::queue(Cookie::make(&#39;test&#39;, &#39;123&#39;, 60));
@@ -1880,7 +2214,7 @@ Route::get(&#39;/cookie&#39;, function () {
      &#39;referral&#39;
  ];</code></pre>
 <p>Make sure to update <code>EncryptCookies.php</code> for app.example.test too.</p>
-<h3 id="registering-a-user-and-generating-a-referral-id">Registering a User and Generating a Referral ID</h3>
+<h2 id="registering-a-user-and-generating-a-referral-id">Registering a User and Generating a Referral ID</h2>
 <p>Head over to your code for <code>app.example.test</code> and then register a new user in your browser.</p>
 <p>Login with your newly created user. We&#39;ll be using a packaged called <a href="https://github.com/vinkla/laravel-hashids">hashids</a> that has been ported to Laravel to create a short unique string based on our users&#39; ID in the database.</p>
 <p>So install the package by running the following:</p>
@@ -1904,7 +2238,7 @@ Route::get(&#39;/cookie&#39;, function () {
     return &#39;http://example.test/?ref=&#39; . \Hashids::encode(auth()-&gt;user()-&gt;id);
 }</code></pre>
 <p>You should see something like this <code>http://example.test/?ref=V53YMO</code> returned.</p>
-<h3 id="checking-for-the-cookie-when-registering-new-users">Checking for the Cookie When Registering New Users</h3>
+<h2 id="checking-for-the-cookie-when-registering-new-users">Checking for the Cookie When Registering New Users</h2>
 <p>First let&#39;s create a new migration to add a new column to our database.</p>
 <pre><code class="language-bash">php artisan make:migration add_referred_by_column_to_users_table --table=users</code></pre>
 <p>Edit the new migration file in <code>database/migrations</code> </p>
@@ -1938,7 +2272,7 @@ Route::get(&#39;/cookie&#39;, function () {
 <pre><code class="language-php">protected $fillable = [
     &#39;name&#39;, &#39;email&#39;, &#39;password&#39;, &#39;referred_by&#39;
 ];</code></pre>
-<h3 id="testing-it-out-with-a-new-user-registration">Testing it out With a New User Registration</h3>
+<h2 id="testing-it-out-with-a-new-user-registration">Testing it out With a New User Registration</h2>
 <p>Before you log out of the current user visit <code>app.example.test/referral-link</code> and copy your referral link.</p>
 <p>Then log out and make sure to clear all your cookies for both <code>example.test</code> and <code>app.example.test</code>. Then paste your referral link into the browser (e.g. <a href="http://example.test/?ref=V53YMO">http://example.test/?ref=V53YMO</a>).</p>
 <p>Then imagine that we click a button on <code>example.test</code> that takes us to <code>app.example.test/register</code> for us to sign up for the application.</p>
@@ -1970,7 +2304,7 @@ public function referrals()
 <p>Now if you login as your first user and visit <code>app.example.test/referrals</code> you&#39;ll see an array of all the users who you&#39;ve referred to the site.</p>
 <p>If you visit <code>app.example.test/referrer</code> you&#39;ll see the details of the user who referred you to the site.</p>
 <p>Obviously we would never do this in a production application but things like <code>auth()-&gt;user()-&gt;referrals()-&gt;count()</code> could be useful.</p>
-<h3 id="closing-thoughts">Closing Thoughts</h3>
+<h2 id="closing-thoughts">Closing Thoughts</h2>
 <p>This is only a very simple example but hopefully it gives you a basic idea of how a more complex system could be implemented. If you are using the same domain for marketing and registrations then you can skip all the cookie sharing stuff and keep your cookies encrypted.</p>
 <p>Source code for both sites can be found here <a href="https://github.com/willbrowningme/laravel-user-referral-example">https://github.com/willbrowningme/laravel-user-referral-example</a>.</p>
 ]]></content>
@@ -1982,7 +2316,7 @@ public function referrals()
         </link>
         <updated>2018-10-26T08:27:04Z</updated>
         <summary type="html"><![CDATA[Sometimes it can be useful for a subdomain such as app.example.com to have access to the cookies that are set by example.com. A situation where this could be used would be for a very simple referral tracking system, where example.com sets a cookie if there is a query string present in the URL. Then when the user registers on app.example.com this cookie is retrieved and the data regarding who referred that user is stored in the database.]]></summary>
-        <content type="html"><![CDATA[<h3 id="setting-up-our-example-sites">Setting up Our Example Sites</h3>
+        <content type="html"><![CDATA[<h2 id="setting-up-our-example-sites">Setting up Our Example Sites</h2>
 <p>For this example I&#39;ll be using <a href="https://laravel.com/docs/5.7/homestead">Laravel Homestead</a> to set up a couple of local Laravel sites.</p>
 <pre><code class="language-bash">laravel new example &amp;&amp; laravel new subdomain</code></pre>
 <p>Then we need to edit Homestead.yaml and our hosts file to add addresses for these applications.</p>
@@ -2000,7 +2334,7 @@ public function referrals()
 <p><img src="https://api.willbrowning.me/storage/uploads/2018/10/26/5bd2d2f5c7477example.test.png" alt="New Laravel App"> </p>
 </div>
 
-<h3 id="updating-our-environment-variables">Updating our Environment Variables</h3>
+<h2 id="updating-our-environment-variables">Updating our Environment Variables</h2>
 <p>Let&#39;s edit our <code>.env</code> file for our main example.test site. Update the following values.</p>
 <pre><code class="language-env">APP_URL=http://example.test
 SESSION_DOMAIN=.example.test</code></pre>
@@ -2009,7 +2343,7 @@ SESSION_DOMAIN=.example.test</code></pre>
 <pre><code class="language-env">APP_URL=http://app.example.test</code></pre>
 <p>We don&#39;t need to set <code>SESSION_DOMAIN</code> here.</p>
 <p>We&#39;ve left <code>SESSION_DRIVER</code> as the default value which is file for both sites.</p>
-<h3 id="saving-our-cookie">Saving our Cookie</h3>
+<h2 id="saving-our-cookie">Saving our Cookie</h2>
 <p>In our main <code>example.test</code> code update the default welcome route in <code>web.php</code>.</p>
 <pre><code class="language-php">Route::get(&#39;/&#39;, function () {
     Cookie::queue(Cookie::make(&#39;test&#39;, &#39;abc&#39;, 60));
@@ -2022,7 +2356,7 @@ Route::get(&#39;/cookie&#39;, function () {
 });</code></pre>
 <p>Here we&#39;re informing Laravel to set a Cookie named &#39;test&#39; with a value of &#39;abc&#39; that will expire in 60 minutes.</p>
 <p>First visit <code>example.test</code> in your browser, then if you visit <code>example.test/cookie</code> you should see the value we set of <code>abc</code>. So we know that our Cookie has been succesfully set.</p>
-<h3 id="accessing-our-cookie-on-our-subdomain">Accessing our Cookie on our Subdomain</h3>
+<h2 id="accessing-our-cookie-on-our-subdomain">Accessing our Cookie on our Subdomain</h2>
 <p>If you head over to your <code>app.example.test</code> code and add the following to the web.php routes file:</p>
 <pre><code class="language-php">Route::get(&#39;/cookie&#39;, function () {
     return Cookie::get(&#39;test&#39;);
@@ -2049,7 +2383,7 @@ Route::get(&#39;/cookie&#39;, function () {
 <p>Then visit <code>example.test</code> in your browser again. Check <code>example.test/cookie</code> and you should see the value of &#39;123&#39; this time.</p>
 <p>Now if you visit <code>app.example.test/cookie</code> you should be able to access the cookie and see the value of &#39;123&#39; returned.</p>
 <p>You should only disable encryption for a cookie if it contains non-sensitive information.</p>
-<h3 id="sharing-cookies-for-a-simple-referral-system">Sharing Cookies for a Simple Referral System</h3>
+<h2 id="sharing-cookies-for-a-simple-referral-system">Sharing Cookies for a Simple Referral System</h2>
 <p>I&#39;ll write another post shortly detailing how we can use what we&#39;ve applied here to create a very simple referral system that tracks who has been referred by who. The system will use middleware to determine whether to set a cookie if a certain query string is present in the request. This will enable you to link to any url on your main site like so <code>example.test/?ref=referral-id</code> or <code>example.test/pricing?ref=referral-id</code>.</p>
 <p><code>Update:</code> You can find the simple referral system post here - <a href="https://willbrowning.me/building-a-simple-referral-system-in-laravel/">Building a Simple Referral System in Laravel</a></p>
 ]]></content>
@@ -2061,7 +2395,7 @@ Route::get(&#39;/cookie&#39;, function () {
         </link>
         <updated>2018-08-07T16:10:36Z</updated>
         <summary type="html"><![CDATA[I had lost count of the number of times I've previously deployed new code to production, cleared browser cache and still been unable to see the changes. The reason being that Cloudflare was caching these files and still serving the old files. Luckily there is a really easy way to clear the cache and purge everything using the API.]]></summary>
-        <content type="html"><![CDATA[<h3 id="getting-your-cloudflare-api-key">Getting your Cloudflare API key</h3>
+        <content type="html"><![CDATA[<h2 id="getting-your-cloudflare-api-key">Getting your Cloudflare API key</h2>
 <p>First we need to find our API key. So visit the &quot;My Profile&quot; section when logged into Cloudflare - <a href="https://dash.cloudflare.com/profile">https://dash.cloudflare.com/profile</a> at the bottom of the page you&#39;ll see your keys.</p>
 <div class="blog-image">
 
@@ -2069,14 +2403,14 @@ Route::get(&#39;/cookie&#39;, function () {
 </div>
 
 <p>We&#39;ll be using the Global API Key to clear the cache.</p>
-<h3 id="finding-your-sites-zone-id">Finding your sites Zone ID</h3>
+<h2 id="finding-your-sites-zone-id">Finding your sites Zone ID</h2>
 <p>The Zone ID for your website can be found in the &quot;Overview&quot; section for that site. It will look like this:</p>
 <div class="blog-image">
 
 <p><img src="https://api.willbrowning.me/storage/uploads/2018/10/23/5bcef944bce69cloudflare-zone-id.png" alt="Cloudflare Zone ID"> </p>
 </div>
 
-<h3 id="sending-the-api-request">Sending the API request</h3>
+<h2 id="sending-the-api-request">Sending the API request</h2>
 <p>The request we&#39;ll be sending to clear the cache looks like this:</p>
 <pre><code class="language-bash">curl -X POST &quot;https://api.cloudflare.com/client/v4/zones/YOUR-ZONE-ID/purge_cache&quot; \
      -H &quot;X-Auth-Email: YOUR-CLOUDFLARE-EMAIL&quot; \
@@ -2116,7 +2450,7 @@ Route::get(&#39;/cookie&#39;, function () {
 </div>
 
 <p>Our vendor bundle is coming in at 752kB!</p>
-<h3 id="identifying-the-main-culprits">Identifying the Main Culprits</h3>
+<h2 id="identifying-the-main-culprits">Identifying the Main Culprits</h2>
 <p>First things first we need to find out why our vendor bundle is so big in the first place.</p>
 <p>Luckily Nuxt uses <a href="webpack-bundle-analyzer">webpack-bundle-analyzer</a> so we can simply add the following to our <code>nuxt.config.js</code> under the build property.</p>
 <pre><code class="language-javascript">build: {
@@ -2131,7 +2465,7 @@ Route::get(&#39;/cookie&#39;, function () {
 <p>Looking at this we can see the <code>highlight.js</code> package is very big with a parsed size of 540kB!</p>
 <p>If we inspect this further we can see this is mainly due to a few languages included with it like mathematica.js or sqf.js.</p>
 <p>Now in my case I only use a handful of common languages so I don&#39;t need any of the other included ones.</p>
-<h3 id="including-only-highlightjs-languages-we-need">Including Only Highlight.js Languages We Need</h3>
+<h2 id="including-only-highlightjs-languages-we-need">Including Only Highlight.js Languages We Need</h2>
 <p>After a little bit of searching I came across <a href="https://github.com/isagalaev/highlight.js/issues/1257#issuecomment-254504876">this comment</a> on GitHub on how to acheive this.</p>
 <p>So let&#39;s give it a try and update our Nuxt site.</p>
 <p>I have a <code>filters.js</code> in the plugins directory where I was importing highlight.js.</p>
@@ -2142,7 +2476,7 @@ Route::get(&#39;/cookie&#39;, function () {
 hljs.registerLanguage(&#39;javascript&#39;, require(&#39;highlight.js/lib/languages/javascript&#39;))
 hljs.registerLanguage(&#39;css&#39;, require(&#39;highlight.js/lib/languages/css&#39;))</code></pre>
 <p>Make sure to only add the languages that you intend to use.</p>
-<h3 id="also-update-highlightjs-in-build--vendor">Also Update Highlight.js In Build &gt; Vendor</h3>
+<h2 id="also-update-highlightjs-in-build--vendor">Also Update Highlight.js In Build &gt; Vendor</h2>
 <p>I also had <code>Highlight.js</code> in the vendor file importing all of the languages, so I simply updated this aswell:</p>
 <pre><code class="language-javascript">build: {
   vendor: [&#39;axios&#39;, &#39;highlight.js/lib/highlight.js&#39;],
@@ -2153,7 +2487,7 @@ hljs.registerLanguage(&#39;css&#39;, require(&#39;highlight.js/lib/languages/css
 </div>
 
 <p>Then ran <code>npm run generate</code> again and had a look at the build analyser.</p>
-<h3 id="the-result">The Result</h3>
+<h2 id="the-result">The Result</h2>
 <p>This time the vendor bundle was only 226kB in parsed size, down from 752kB! That&#39;s a 70% decrease just from removing uneeded languages. </p>
 <div class="blog-image">
 
@@ -2184,7 +2518,7 @@ Vue.filter(&#39;toDate&#39;, function(timestamp) {
         </link>
         <updated>2018-06-26T14:09:53Z</updated>
         <summary type="html"><![CDATA[This post demonstrates a reasonably simple way to automatically deploy and run code builds for your sites using webhooks and GitHub (you can use GitLab or whatever your preference is). We will create a webhook that is fired when we push updates to our origin repository and then use an incoming webhook server to listen for these and to fetch our updates then run our build scripts.]]></summary>
-        <content type="html"><![CDATA[<h3 id="installing-our-incoming-webhook-server">Installing our Incoming Webhook Server</h3>
+        <content type="html"><![CDATA[<h2 id="installing-our-incoming-webhook-server">Installing our Incoming Webhook Server</h2>
 <p>We&#39;ll be using the following incoming webhook server to acheive our goal - <a href="https://github.com/adnanh/webhook">https://github.com/adnanh/webhook</a></p>
 <p>This webhook server is written in Go and is really simply to get set up. It is easy to configure as the config file is just JSON.</p>
 <p>I&#39;ll be spinning up a fresh droplet with DigitalOcean for this example but you can use your own existing server and websites.</p>
@@ -2200,7 +2534,7 @@ export PATH=$PATH:/usr/local/go/bin</code></pre>
 <p>Then we can simply install the latest version of webhook with the following command:</p>
 <pre><code class="language-bash">go get github.com/adnanh/webhook</code></pre>
 <p>This will create a file <code>~/go/bin/webhook</code>, in my case <code>/home/johndoe/go/bin/webhook</code>.</p>
-<h3 id="configuring-our-webhooks">Configuring our Webhooks</h3>
+<h2 id="configuring-our-webhooks">Configuring our Webhooks</h2>
 <p>Create a folder called <code>~/hooks</code> and then create a folder inside hooks with the same name as the website your going to deploy. In my case I&#39;ll just call it <code>my-site-1</code>. This is where we&#39;ll put our <code>deploy.sh</code> script and also an <code>output.log</code> file.</p>
 <pre><code class="language-bash">mkdir ~/hooks
 mkdir ~/hooks/my-site-1</code></pre>
@@ -2244,7 +2578,7 @@ mkdir ~/hooks/my-site-1</code></pre>
     }
   }
 ]</code></pre>
-<p>Replace <RANDOM-SECRET-STRING> with a long random string e.g. H4GM&amp;nc3v^fiK#r3qJMTTsk%ZL4Hdq we will need to use this later in GitHub when setting up the webhook.</p>
+<p>Replace <RANDOM-SECRET-STRING> with a long random string e.g. H4GMvnc3v^fiK#r3qJMTTsk%ZL4Hdq we will need to use this later in GitHub when setting up the webhook.</p>
 <p>Inside the <code>~/hooks/my-site-1</code> folder create an <code>output.log</code> file. Then create a file named <code>deploy.sh</code>.</p>
 <pre><code class="language-bash">cd ~/hooks/my-site-1
 touch output.log
@@ -2276,7 +2610,7 @@ php artisan queue:restart</code></pre>
 <p>The incoming webhook server runs on <code>port 9000</code> by default you can change this if you wish as described <a href="https://github.com/adnanh/webhook/blob/master/docs/Webhook-Parameters.md">here</a> but for our example we&#39;ll just leave it.</p>
 <p>You now need to make sure that port 9000 is open on your server, which may involve updating your firewall rules. If you&#39;re using a service such as <a href="https://runcloud.io/r/BVrWyymBWKNk">RunCloud</a> (affiliate link) this is very easily done from the user interface.</p>
 <p>Once you&#39;ve made sure port 9000 is open we can try running the server to see if everything is working so far.</p>
-<h3 id="starting-up-our-webhook-server">Starting up our Webhook Server</h3>
+<h2 id="starting-up-our-webhook-server">Starting up our Webhook Server</h2>
 <p>To start the server enter the following command making sure to change johndoe to your user&#39;s username and <YOUR-SERVER-IP> with the IP of the your server.</p>
 <pre><code class="language-bash">/home/johndoe/go/bin/webhook -hooks /home/johndoe/hooks/hooks.json -ip &quot;&lt;YOUR-SERVER-IP&gt;&quot; -verbose</code></pre>
 <p>If you now visit <code>http://&lt;YOUR-SERVER-IP&gt;:9000/hooks/deploy-my-site-1</code> in the browser you should see a message saying <code>Hook rules were not satisfied.</code> This is because the rules we specified in hooks.json including the secret string were not included in our request and therefore not satisfied.</p>
@@ -2299,7 +2633,7 @@ HostName github.com
 IdentityFile ~/.ssh/my_site_1_id_rsa</code></pre>
 <p>Make sure to change my-site-1 to the alias you definied above for the remote branch and also the IdentityFile to the path for the private key we are about to generate.</p>
 <p>If we try to now run <code>git fetch -all</code> we will get an error saying Permission denied (publickey). This is because we haven&#39;t yet set up a deploy key for the repo in GitHub.</p>
-<h3 id="generating-our-deploy-key">Generating our Deploy Key</h3>
+<h2 id="generating-our-deploy-key">Generating our Deploy Key</h2>
 <p>To fix this let&#39;s generate a new ssh key paid on our server by running. Substitute the email for your GitHub email.</p>
 <p>When it asks <code>Enter a file in which to save the key</code> name it like so - <code>/home/johndoe/.ssh/my_site_1_id_rsa</code> and leave the passphrase blank. (replace my_site_1 with the name of your github repo)</p>
 <pre><code class="language-bash">ssh-keygen -t rsa -b 4096 -C &quot;your@github-email.com&quot;</code></pre>
@@ -2326,7 +2660,7 @@ git checkout --force &quot;origin/master&quot;</code></pre>
 </div>
 
 <p>Choose application/json for the content type and make sure to enter the random secret string you generated ealier in our hooks.json file. These will need to match or the script will not be exectuted. Choose &quot;just the push event&quot; and save the webhook.</p>
-<h3 id="testing-it-works">Testing it Works</h3>
+<h2 id="testing-it-works">Testing it Works</h2>
 <p>Now we need to test it all works as planned. So start up your webhook server again by running:</p>
 <pre><code class="language-bash">/home/johndoe/go/bin/webhook -hooks /home/johndoe/hooks/hooks.json -ip &quot;&lt;YOUR-SERVER-IP&gt;&quot; -verbose</code></pre>
 <p>Make an edit or an update to your code on your local pc repository so that we can commit the changes and then push them to GitHub by running:</p>
@@ -2334,7 +2668,7 @@ git checkout --force &quot;origin/master&quot;</code></pre>
 <p>This should now trigger GitHub to send the webhook delivery to our server which will then run the <code>deploy.sh</code> script for my-site-1 and will fetch the updates we just made and then build the site with the commands we gave.</p>
 <p>If you visit GitHub settings and then webhooks you should see the new delivery under <code>Recent Deliveries</code>. Make sure it has a <code>200</code> response code and shows the response body we gave of &quot;Executing deploy script...&quot;.</p>
 <p>Stop the webhook server by typing CTRL+C into the terminal.</p>
-<h3 id="installing-supervisor-to-keep-our-webhook-server-running">Installing Supervisor to Keep our Webhook Server Running</h3>
+<h2 id="installing-supervisor-to-keep-our-webhook-server-running">Installing Supervisor to Keep our Webhook Server Running</h2>
 <p>Now that everything is working as planned let&#39;s install <code>supervisor</code> so we can keep the webhook server running in the background.</p>
 <p>So below we install supervisor then create a new .conf file inside the <code>/etc/supervisor/conf.d</code> directory.</p>
 <pre><code class="language-bash">sudo apt-get install supervisor
@@ -2361,7 +2695,7 @@ sudo supervisorctl start webhooks:*</code></pre>
 <p>So now we should have the webhooks server running nicely in the background ready to receive incoming deliveries from GitHub.</p>
 <p>Make another edit to your local code and push it to GitHub to make sure everything is still working as it should.</p>
 <p>Check the <code>output.log</code> file at <code>~/hooks/my-site-1/output.log</code> to see the output from <code>deploy.sh</code>.</p>
-<h3 id="adding-another-site">Adding Another Site</h3>
+<h2 id="adding-another-site">Adding Another Site</h2>
 <p>If you want to add another site with a different set of deploy and build commands you can follow these steps:</p>
 <p>First let&#39;s edit hooks.json so that it looks something like this:</p>
 <pre><code class="language-json">[
@@ -2499,7 +2833,7 @@ git checkout --force &quot;origin/master&quot;</code></pre>
         <summary type="html"><![CDATA[In this post we'll look at adding a few finishing touches to the site and then at how we can go about deploying it. Including setting up automatic regeneration for the site when a post is updated, added or removed.]]></summary>
         <content type="html"><![CDATA[<p>If you haven&#39;t read Parts 1 and 2 of this guide you can find them here - <a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-1-setup/">Part 1: Setup</a> and here - <a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-2-dynamic-routes">Part 2: Dynamic Routes</a></p>
 <p>Before we look at deploying our static blog let&#39;s add a few finishing touches like a sitemap and page titles etc.</p>
-<h3 id="adding-a-sitemap">Adding a Sitemap</h3>
+<h2 id="adding-a-sitemap">Adding a Sitemap</h2>
 <p>In the project root run the following to install the Nuxt Community sitemap module:</p>
 <pre><code class="language-bash">npm install @nuxtjs/sitemap --save-dev</code></pre>
 <p>Then in your nuxt.config.js add the sitemap to the modules: property</p>
@@ -2539,7 +2873,7 @@ git checkout --force &quot;origin/master&quot;</code></pre>
   }
 },</code></pre>
 <p>Here we are simply letting the sitemap module know what routes we have.</p>
-<h3 id="setting-page-titles-and-meta">Setting Page Titles and Meta</h3>
+<h2 id="setting-page-titles-and-meta">Setting Page Titles and Meta</h2>
 <p>When we deploy our site we want to have the correct page titles and meta descriptions for each post, so let&#39;s look at sorting this out.</p>
 <p>In the head: {...} property of nuxt.config.js you&#39;ll see we have a title and meta property we can set. Set these to the default for your blog.</p>
 <p>Lets look at our about.vue page we created in the first part of this guide. If you don&#39;t have one just create a new <code>about.vue</code> file in the pages directory and add the following:</p>
@@ -2588,7 +2922,7 @@ export default {
 }</code></pre>
 <p>If you want to improve this further you can add meta tags for social media sites like Twitter, Google and Facebook.</p>
 <p>Also using <a href="https://realfavicongenerator.net/">Real Favicon Generator</a> you can create all the correct icons etc. Just add the files to your static directory and they will be copied over to the dist directory when you run <code>npm run generate</code>.</p>
-<h3 id="displaying-our-post-dates">Displaying our Post Dates</h3>
+<h2 id="displaying-our-post-dates">Displaying our Post Dates</h2>
 <p>So far we haven&#39;t displayed the creation date for any of our blog posts so let&#39;s look at how we can do this.</p>
 <p>Install <a href="https://github.com/iamkun/dayjs">day.js</a> with the following command:</p>
 <pre><code class="language-bash">npm install dayjs --save-dev</code></pre>
@@ -2636,7 +2970,7 @@ Vue.filter(&#39;toDate&#39;, function(timestamp) {
 <p><img src="https://api.willbrowning.me/storage/uploads/2018/06/21/5b2b9e362f627posts-with-dates.png" alt="Posts with dates"> </p>
 </div>
 
-<h3 id="deploying-the-site">Deploying the Site</h3>
+<h2 id="deploying-the-site">Deploying the Site</h2>
 <p>Now that our site is in reasonable shape let&#39;s look at deploying it.</p>
 <p>By far the easiest place for us to deploy our site is <a href="https://www.netlify.com/">Netlify</a>.</p>
 <p>We can simply link our git repository on GitHub/GitLab/Bitbucket and it will automatically be updated and rebuilt on Netlify whenever we push changes. We can also easily add webhooks that allow us to tell Netlify to regenerate the site when we update one of our blog posts in Cockpit.</p>
@@ -2667,7 +3001,7 @@ URL=${process.env.URL}
     <b>Note:</b> If you run into errors or issues during the build phase with Netlify try changing the Build image
 </div>
 
-<h3 id="setting-up-build-webhooks">Setting up Build Webhooks</h3>
+<h2 id="setting-up-build-webhooks">Setting up Build Webhooks</h2>
 <p>So we&#39;ve got automatic deploys set up for pushing changes to GitHub etc. but now we need to tell Netlify to rebuild of static site when we update, add or delete a post in Cockpit.</p>
 <p>In Netlify under &quot;Build &amp; Deploy&quot; Settings you should see an option to add a build hook.</p>
 <p>Click on this and call it something like <code>Regenerate Blog</code>.</p>
@@ -2682,10 +3016,10 @@ URL=${process.env.URL}
 <p>Click save and then go edit one of your posts to see if everything is working.</p>
 <p>You should see after a minute or so that Netlify has automatically regenerated the static site for us!</p>
 <p>You can now go on to add your own custom domain to your blog and also add an SSL certifcate with forced https redirection.</p>
-<h3 id="deploying-without-using-netlify">Deploying without using Netlify</h3>
+<h2 id="deploying-without-using-netlify">Deploying without using Netlify</h2>
 <p>We could also create a similar setup to the above on our own Digitalocean, Vultr etc. VPS using a small server to accept webhooks and run shell commands. <code>I&#39;ll cover this in a future post!</code></p>
 <p><code>Update!</code> You can find my post explaining this here - <a href="https://willbrowning.me/setting-up-automatic-deployment-and-builds-using-webhooks">Setting up Automatic Deployment and Builds Using Webhooks</a></p>
-<h3 id="wrapping-up">Wrapping up</h3>
+<h2 id="wrapping-up">Wrapping up</h2>
 <p>Hopefully you can see how easy it is to get up and running with a simple statically generate site using Nuxt and Cockpit. Paired with Netlify it really is a great developer experience and being served on Netlify&#39;s CDN makes it extremely fast!</p>
 <p>You can check out the GitHub repo of the finished blog <a href="https://github.com/willbrowningme/nuxt-cockpit-static-blog">here</a> and see a live demo of the site on Netlify here - <a href="https://nuxt-cockpit-static-blog.netlify.com/">https://nuxt-cockpit-static-blog.netlify.com</a></p>
 ]]></content>
@@ -2698,7 +3032,7 @@ URL=${process.env.URL}
         <updated>2018-06-18T13:23:39Z</updated>
         <summary type="html"><![CDATA[In this post we'll be setting up our category page to display all posts that have a tag matching our category. We'll also be setting up our dynamic routes so that when we run "npm run generate" all the individual post and category routes will be correctly generated.]]></summary>
         <content type="html"><![CDATA[<p>If you haven&#39;t read Part 1 of this guide you can find it here - <a href="https://willbrowning.me/building-a-static-blog-with-nuxt-js-and-cockpit-headless-cms-part-1-setup/">Part 1: Setup</a></p>
-<h3 id="generating-our-dynamic-routes-for-individual-blog-posts">Generating our dynamic routes for individual blog posts</h3>
+<h2 id="generating-our-dynamic-routes-for-individual-blog-posts">Generating our dynamic routes for individual blog posts</h2>
 <p>You might be wondering how can we generate static pages for each blog post when deploying or updating our site?</p>
 <p>Nuxt comes with an easy solution for this, so open up your nuxt.config.js and add the following above the build: {...} property:</p>
 <pre><code class="language-javascript">generate: {
@@ -2777,7 +3111,7 @@ export default {
 
 <p>Now you may have noticed our markdown is not being parsed and it looks really messy. Don&#39;t worry we&#39;ll fix this soon!</p>
 <p><strong>Note:</strong> If you&#39;re looking for some markdown placeholder text you can use <a href="https://jaspervdj.be/lorem-markdownum/">Lorum Markdown</a> to generate some.</p>
-<h3 id="parsing-our-markdown">Parsing our Markdown</h3>
+<h2 id="parsing-our-markdown">Parsing our Markdown</h2>
 <p>Let&#39;s sort out our markdown parsing and code higlighting.</p>
 <pre><code class="language-bash">npm install marked highlight.js --save-dev</code></pre>
 <p>We&#39;ll make a global filter that we can use to parse our Markdown so create a file called <code>filters.js</code> in the plugins directory and put this in it:</p>
@@ -2827,7 +3161,7 @@ Vue.filter(&#39;parseMd&#39;, function(content) {
 </div>
 
 <p>That&#39;s starting to look a bit more like it!</p>
-<h3 id="generating-our-category-routes">Generating our Category Routes</h3>
+<h2 id="generating-our-category-routes">Generating our Category Routes</h2>
 <p>Okay, so we&#39;ve got our individual blog posts and their routes but we now want to generate routes for the different <code>post categories</code> based on their tags.</p>
 <p>For example if we have a post tagged <code>vue</code> we want to be able to click on this tag to see all other posts that have been tagged <code>vue</code>.</p>
 <p>So lets go back to nuxt.config.js and update our routes method in the generate: property.</p>
@@ -2879,7 +3213,7 @@ Vue.filter(&#39;parseMd&#39;, function(content) {
 <p>For the posts we can simply map them directly into their route and payloads.</p>
 <p>Finally we just call <code>posts.concat(tags)</code> to join the two together and return this.</p>
 <p>So now we&#39;ve got routes for our posts and a category page for each unique post tag!</p>
-<h3 id="creating-our-category-page">Creating our Category page</h3>
+<h2 id="creating-our-category-page">Creating our Category page</h2>
 <p>Since we&#39;ve set our category routes to be <code>/category/tag-name</code> we need to create a category directory inside the pages directory.</p>
 <p>Inside the category directory create a new file called <code>_tag.vue</code> (following the same naming convention as before) and put the following inside:</p>
 <pre><code class="language-html">&lt;template&gt;
@@ -2947,7 +3281,7 @@ export default {
         </link>
         <updated>2018-06-16T12:14:53Z</updated>
         <summary type="html"><![CDATA[If you've ever felt WordPress is too bloated and slow then you might want to try out building a statically generated blog, using a static site generator and a headless CMS.]]></summary>
-        <content type="html"><![CDATA[<h3 id="what-well-be-building">What we&#39;ll be building</h3>
+        <content type="html"><![CDATA[<h2 id="what-well-be-building">What we&#39;ll be building</h2>
 <blockquote>
 <p>Updated for Nuxt 2!</p>
 </blockquote>
@@ -2959,7 +3293,7 @@ export default {
 <p>Modern web development architecture based on client-side JavaScript, reusable APIs, and prebuilt Markup.</p>
 </blockquote>
 <p>In our example we&#39;ll be writing <code>Markdown</code> in Cockpit for our posts that will be fetched by Nuxt.js and then parsed to HTML before generating our static blog.</p>
-<h3 id="why-a-static-site">Why a Static Site?</h3>
+<h2 id="why-a-static-site">Why a Static Site?</h2>
 <p>Here are just a few benefits of generating a static site:</p>
 <ul>
 <li>Better Performance</li>
@@ -2971,10 +3305,10 @@ export default {
 <p>For a more comprehensive list of headless CMSs - <a href="https://headlesscms.org/">https://headlesscms.org/</a></p>
 <p>And for a list of static site generators - <a href="https://www.staticgen.com/">https://www.staticgen.com/</a></p>
 <p>For the site we&#39;re building we&#39;ll be using Nuxt.js as I love working with Vue and also Cockpit as it&#39;s a PHP based Headless CMS and is very quick and easy to set up.</p>
-<h3 id="website-structure">Website Structure</h3>
+<h2 id="website-structure">Website Structure</h2>
 <p>We&#39;ll be keeping the headless CMS backend separate from the frontend site. So you will need to create a new app directory on your server called something like <code>cms-yourblog</code> and another site called <code>yourblog</code>. </p>
 <p>You can then use <code>yourdomain.com</code> for the frontend and a subdomain such as <code>cms.yourdomain.com</code> for the backend. You can obviously use whatever subdomain you like.</p>
-<h3 id="setting-up-cockpit">Setting up Cockpit</h3>
+<h2 id="setting-up-cockpit">Setting up Cockpit</h2>
 <p>I&#39;m skipping setting up in our local environment with version control etc. here just to speed things up. But you may want to set Cockpit up locally first.</p>
 <p>We don&#39;t actually need to do much configuration for Cockpit, you can simply download the zip file into your cms-yourblog web root directory and unzip the contents. </p>
 <p>The third and forth commands below simply move the contents of the unzipped cockpit-master directory up one level to the current web root directory and then remove the empty cockpit-master directory.</p>
@@ -3016,7 +3350,7 @@ rm master.zip</code></pre>
 <p><code>https://cms.yourdomain.com/api/collections/get/posts?token=YOUR-API-TOKEN</code></p>
 <p>This should return your posts in the <code>entries</code> array of the response. </p>
 <p>Now that we&#39;ve got our basic CMS setup that can return our post data we can move onto setting up Nuxt.js for the frontend.</p>
-<h3 id="setting-up-nuxtjs">Setting up Nuxt.js</h3>
+<h2 id="setting-up-nuxtjs">Setting up Nuxt.js</h2>
 <p>First of all we need to install Nuxt. We&#39;ll do this on our local computer and run the built in development server.</p>
 <p>To install Nuxt run the following command:</p>
 <pre><code class="language-bash">npx create-nuxt-app static-blog</code></pre>
@@ -3053,7 +3387,7 @@ POSTS_URL=http://cms.yourdomain.com/api/collections/get/posts?token=YOUR-API-TOK
 <p>The reason we used the dotenv package and didn&#39;t just add our api key to nuxt.config.js in the <a href="https://nuxtjs.org/api/configuration-env#the-env-property">env:{...} property</a> is because this gets bundled up in a js file and exposed to the client. So someone would be able to simply open our <code>/_nuxt/xxxxxxxxxxxxxxxxxxxx.js</code> file and see our api key in plain text!</p>
 <p>Install tailwind for our css framework (feel free to use any other css framework you like).</p>
 <pre><code class="language-bash">npm install tailwindcss --save-dev</code></pre>
-<h3 id="setting-up-tailwindcss-with-purgecss">Setting up Tailwindcss with Purgecss</h3>
+<h2 id="setting-up-tailwindcss-with-purgecss">Setting up Tailwindcss with Purgecss</h2>
 <p>Next initiate the tailwind config file by running:</p>
 <pre><code class="language-bash">./node_modules/.bin/tailwind init tailwind.js</code></pre>
 <p>Create a new directory called css inside the assets directory and then create a file in here called <code>main.css</code> and add the following to it:</p>
@@ -3134,7 +3468,7 @@ build: {
 <p>We&#39;ve added a few tags to the whitelist to make sure that purgecss doesn&#39;t remove any styles that apply to them.</p>
 <p>We should now have tailwindcss up and running with purgecss to remove any unused styles when we come round to running <code>npm run generate</code>.</p>
 <p>Fire up the dev server with <code>npm run dev</code> just to make sure everything still works.</p>
-<h3 id="updating-our-default-layout">Updating our default layout</h3>
+<h2 id="updating-our-default-layout">Updating our default layout</h2>
 <p>Inside the components directory create three new files; <code>PageHeader.vue</code> <code>PageNav.vue</code> and <code>PageFooter.vue</code> with the following contents respectively:</p>
 <pre><code class="language-html">&lt;template&gt;
   &lt;header class=&quot;text-center&quot;&gt;
@@ -3198,7 +3532,7 @@ pre {
   @apply my-8;
 }</code></pre>
 <p>Now we just need to update index.vue in the pages directory.</p>
-<h3 id="fetching-and-displaying-our-posts">Fetching and displaying our posts</h3>
+<h2 id="fetching-and-displaying-our-posts">Fetching and displaying our posts</h2>
 <p>In the index.vue page update the file so that it resembles the following:</p>
 <pre><code class="language-html">&lt;template&gt;
   &lt;section&gt;
