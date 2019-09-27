@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://willbrowning.me/feed.xml</id>
     <title>Will Browning - Feed</title>
-    <updated>2019-07-31T08:45:20Z</updated>
+    <updated>2019-09-27T09:00:53Z</updated>
     <generator>Feed for Node.js</generator>
     <link rel="alternate" href="https://willbrowning.me/feed.xml"/>
     <subtitle>A feed for willbrowning.me</subtitle>
@@ -21,7 +21,7 @@
 <p>Commands will be run by a user named johndoe with sudo privileges.</p>
 <h2 id="install-borg-backup">Install Borg Backup</h2>
 <p>First things first we need to install Borg, luckily we can find it in Ubuntu&#39;s software repositories.</p>
-<pre><code class="language-bash">sudo apt-get update
+<pre><code class="language-bash">sudo apt update
 sudo apt install borgbackup</code></pre>
 <p>You can check everything worked correctly by running <code>borg --version</code>, you should see something like <code>borg 1.1.5</code>, which is the version at the time of writing this post.</p>
 <h2 id="install-python-3-and-pip">Install Python 3 and PIP</h2>
@@ -34,7 +34,7 @@ python3 --version</code></pre>
 <pre><code class="language-bash">pip --version
 pip3 --version</code></pre>
 <p>If PIP returns (python 2.7) at the end or it is not installed at all then we need to install PIP for Python 3.</p>
-<pre><code class="language-bash">sudo apt-get install python3-pip python3-setuptools</code></pre>
+<pre><code class="language-bash">sudo apt install python3-pip python3-setuptools</code></pre>
 <p>Make sure everything was installed correctly by running <code>pip3 --version</code>.</p>
 <p>Next install the following package that is used by Borgmatic.</p>
 <pre><code class="language-bash">pip3 install wheel</code></pre>
@@ -2281,12 +2281,12 @@ Route::get(&#39;/cookie&#39;, function () {
 <p>Update <code>app/User.php</code> and add the following to the bottom of the file.</p>
 <pre><code class="language-php">public function referrer()
 {
-    return $this-&gt;hasOne(&#39;App\User&#39;, &#39;id&#39;, &#39;referred_by&#39;);
+    return $this-&gt;belongsTo(&#39;App\User&#39;, &#39;referred_by&#39;);
 }
 
 public function referrals()
 {
-    return $this-&gt;hasMany(&#39;App\User&#39;, &#39;referred_by&#39;, &#39;id&#39;);
+    return $this-&gt;hasMany(&#39;App\User&#39;, &#39;referred_by&#39;);
 }</code></pre>
 <p>Then update your web.php routes file.</p>
 <pre><code class="language-php">Route::get(&#39;/referrer&#39;, &#39;HomeController@referrer&#39;);
@@ -2604,6 +2604,8 @@ php artisan route:cache
 
 php artisan config:cache
 
+php artisan view:cache
+
 php artisan queue:restart</code></pre>
 <p>The third line of the above simply redirects all output to our <code>output.log</code> file. Then we run git fetch and get checkout to get our code updates from our origin repo (in my case GitHub).</p>
 <p>You can update the other commands to suit your needs. Since I&#39;m using a <code>Laravel</code> app as an example I&#39;ll run some artisan commands to clear the cache and restart the queue etc.</p>
@@ -2671,7 +2673,7 @@ git checkout --force &quot;origin/master&quot;</code></pre>
 <h2 id="installing-supervisor-to-keep-our-webhook-server-running">Installing Supervisor to Keep our Webhook Server Running</h2>
 <p>Now that everything is working as planned let&#39;s install <code>supervisor</code> so we can keep the webhook server running in the background.</p>
 <p>So below we install supervisor then create a new .conf file inside the <code>/etc/supervisor/conf.d</code> directory.</p>
-<pre><code class="language-bash">sudo apt-get install supervisor
+<pre><code class="language-bash">sudo apt install supervisor
 cd /etc/supervisor/conf.d
 sudo nano webhooks.conf</code></pre>
 <p>Add the following inside the <code>webhooks.conf</code> file, replacing the username and IP etc. with your values.</p>
@@ -2794,6 +2796,8 @@ composer install --no-dev
 php artisan route:cache
 
 php artisan config:cache
+
+php artisan view:cache
 
 php artisan queue:restart</code></pre>
 <p>Remember to make it executable too.</p>
