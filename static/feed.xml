@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://willbrowning.me/feed.xml</id>
     <title>Will Browning - Feed</title>
-    <updated>2019-09-27T09:00:53Z</updated>
+    <updated>2020-03-23T17:23:06Z</updated>
     <generator>Feed for Node.js</generator>
     <link rel="alternate" href="https://willbrowning.me/feed.xml"/>
     <subtitle>A feed for willbrowning.me</subtitle>
@@ -324,7 +324,13 @@ hooks:
 <p>To add a new cron job type <code>crontab -e</code> in the terminal.</p>
 <p>Add the following line to the end of the file.</p>
 <pre><code>0 0 * * * sudo /home/johndoe/.local/bin/borgmatic</code></pre><p>This will create a new backup everyday at midnight.</p>
-<h2 id="checking-backups">Checking backups</h2>
+<h2 id="multiple-repositories-for-differents-apps">Multiple Repositories for Differents Apps</h2>
+<p>If you would like to separate your apps in different repositories or even to create a repository for backing up just your database you can create a new config file by running:</p>
+<pre><code class="language-bash">sudo env &quot;PATH=$PATH&quot; generate-borgmatic-config --destination /etc/borgmatic.d/app1.yaml</code></pre>
+<p>You can then go and update the new config file to your liking e.g. to make an hourly database backup.</p>
+<p>When setting up cron jobs for backups as above you can pass <code>--config /etc/borgmatic.d/app1.yaml</code> to tell Borgmatic to only run the backup for that repository.</p>
+<pre><code>0 * * * * sudo /home/johndoe/.local/bin/borgmatic --config /etc/borgmatic.d/app1.yaml</code></pre><p>This will run our app1 config file every hour.</p>
+<h2 id="checking-backups">Checking Backups</h2>
 <p>To see all of your backup archives you can run:</p>
 <pre><code class="language-bash">sudo env &quot;PATH=$PATH&quot; borgmatic list</code></pre>
 <p>To see details about usage and the size of archives you can run:</p>
@@ -732,9 +738,9 @@ return true;</code></pre>
 <pre><code class="language-html">&lt;template&gt;
   &lt;section&gt;
     &lt;article class=&quot;my-8&quot;&gt;
-      &lt;div class=&quot;text-grey-dark font-bold text-sm tracking-wide&quot;&gt;
+      &lt;div class=&quot;text-gray-600 font-bold text-sm tracking-wide&quot;&gt;
         {{ post._created | toDate }}
-        &lt;a v-for=&quot;(tag, key) in post.tags&quot; :key=&quot;key&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1 no-underline&quot;&gt;{{ tag }}&lt;/a&gt;
+        &lt;a v-for=&quot;(tag, key) in post.tags&quot; :key=&quot;key&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1&quot;&gt;{{ tag }}&lt;/a&gt;
       &lt;/div&gt;
       &lt;h1 class=&quot;mt-2&quot;&gt;
         {{ post.title }}
@@ -749,7 +755,7 @@ return true;</code></pre>
         &lt;comment-form class=&quot;border-b-2&quot; :post_id=&quot;post._id&quot;/&gt;
       &lt;/div&gt;
 
-      &lt;ul class=&quot;list-reset&quot;&gt;
+      &lt;ul&gt;
         &lt;comment
         v-for=&quot;comment in comments&quot;
         :key=&quot;comment._id&quot;
@@ -821,14 +827,14 @@ export default {
   &lt;form @submit=&quot;checkForm&quot; method=&quot;post&quot; :id=&quot;parent_id ? `reply-${parent_id}` : &#39;&#39;&quot;&gt;
     &lt;div class=&quot;flex flex-col md:flex-row mb-4&quot;&gt;
     &lt;div class=&quot;w-full md:w-1/2 md:mr-2&quot;&gt;
-      &lt;input v-model=&quot;name&quot; type=&quot;text&quot; name=&quot;name&quot; placeholder=&quot;Your Name&quot; class=&quot;block bg-grey-lighter mt-2 rounded w-full py-2 px-3&quot;&gt;
+      &lt;input v-model=&quot;name&quot; type=&quot;text&quot; name=&quot;name&quot; placeholder=&quot;Your Name&quot; class=&quot;block bg-gray-200 mt-2 rounded w-full py-2 px-3&quot;&gt;
     &lt;/div&gt;
     &lt;div class=&quot;w-full md:w-1/2 md:ml-2&quot;&gt;
-      &lt;input v-model=&quot;email&quot; type=&quot;email&quot; name=&quot;email&quot; placeholder=&quot;Your Email&quot; class=&quot;block bg-grey-lighter mt-2 rounded w-full py-2 px-3&quot;&gt;
+      &lt;input v-model=&quot;email&quot; type=&quot;email&quot; name=&quot;email&quot; placeholder=&quot;Your Email&quot; class=&quot;block bg-gray-200 mt-2 rounded w-full py-2 px-3&quot;&gt;
     &lt;/div&gt;
     &lt;/div&gt;
     &lt;div class=&quot;mb-4&quot;&gt;
-      &lt;textarea v-model=&quot;comment&quot; name=&quot;comment&quot; rows=&quot;6&quot; :placeholder=&quot;parent_id ? `Reply to ${parent_name}...` : &#39;Add a comment&#39;&quot; class=&quot;bg-grey-lighter rounded resize-none w-full h-20 py-2 px-3&quot;&gt;
+      &lt;textarea v-model=&quot;comment&quot; name=&quot;comment&quot; rows=&quot;6&quot; :placeholder=&quot;parent_id ? `Reply to ${parent_name}...` : &#39;Add a comment&#39;&quot; class=&quot;bg-gray-200 rounded resize-none w-full h-20 py-2 px-3&quot;&gt;
       &lt;/textarea&gt;
     &lt;/div&gt;
     &lt;div class=&quot;mb-4&quot;&gt;
@@ -839,9 +845,9 @@ export default {
     &lt;/div&gt;
     &lt;input type=&quot;text&quot; name=&quot;website&quot; v-model=&quot;website&quot; class=&quot;hidden opacity-0 z-0&quot; tabindex=&quot;-1&quot; autocomplete=&quot;off&quot;&gt;
     &lt;div class=&quot;mb-4&quot;&gt;
-      &lt;input type=&quot;submit&quot; value=&quot;Add Comment&quot; :class=&quot;{ &#39;cursor-not-allowed opacity-50&#39;: loading }&quot; class=&quot;cursor-pointer bg-blue hover:bg-blue-light text-white font-bold py-2 px-4 border-b-4 border-blue-dark hover:border-blue rounded&quot;&gt;
+      &lt;input type=&quot;submit&quot; value=&quot;Add Comment&quot; :class=&quot;{ &#39;cursor-not-allowed opacity-50&#39;: loading }&quot; class=&quot;cursor-pointer bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-600 hover:border-blue-500 rounded&quot;&gt;
     &lt;/div&gt;
-    &lt;div v-if=&quot;errors.length&quot; class=&quot;mb-4 text-red&quot;&gt;
+    &lt;div v-if=&quot;errors.length&quot; class=&quot;mb-4 text-red-500&quot;&gt;
       &lt;b&gt;Please correct the following error(s):&lt;/b&gt;
       &lt;ul&gt;
         &lt;li v-for=&quot;error in errors&quot; :key=&quot;error&quot;&gt;
@@ -849,7 +855,7 @@ export default {
         &lt;/li&gt;
       &lt;/ul&gt;
     &lt;/div&gt;
-    &lt;div v-if=&quot;success&quot; class=&quot;text-green mb-4&quot;&gt;
+    &lt;div v-if=&quot;success&quot; class=&quot;text-green-500 mb-4&quot;&gt;
       &lt;b&gt;Your comment is currently awaiting moderation&lt;/b&gt;
     &lt;/div&gt;
   &lt;/form&gt;
@@ -953,29 +959,29 @@ export default {
 <pre><code class="language-html">&lt;template&gt;
   &lt;li class=&quot;mb-4&quot; :class=&quot;!parent ? &#39;border-b-2&#39; : &#39;&#39;&quot;&gt;
     &lt;div ref=&quot;parent&quot;&gt;
-      &lt;div class=&quot;text-grey-dark text-sm mb-2&quot;&gt;
-        &lt;span class=&quot;text-grey-darkest font-semibold&quot;&gt;
+      &lt;div class=&quot;text-gray-600 text-sm mb-2&quot;&gt;
+        &lt;span class=&quot;text-gray-800 font-semibold&quot;&gt;
           {{comment.name}}
         &lt;/span&gt;
         &lt;span class=&quot;mx-1 text-xs&quot;&gt;•&lt;/span&gt;
         {{ comment._created | toDate }}
         &lt;span v-if=&quot;parent&quot;&gt;
-          &lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;-5 -5 24 24&quot; width=&quot;12&quot; height=&quot;12&quot; preserveAspectRatio=&quot;xMinYMin&quot; class=&quot;text-grey-dark fill-current&quot;&gt;
+          &lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;-5 -5 24 24&quot; width=&quot;12&quot; height=&quot;12&quot; preserveAspectRatio=&quot;xMinYMin&quot; class=&quot;inline-block text-gray-600 fill-current&quot;&gt;
             &lt;path d=&quot;M10.586 5.657l-3.95-3.95A1 1 0 0 1 8.05.293l5.657 5.657a.997.997 0 0 1 0 1.414L8.05 13.021a1 1 0 1 1-1.414-1.414l3.95-3.95H1a1 1 0 1 1 0-2h9.586z&quot;&gt;&lt;/path&gt;
           &lt;/svg&gt;
           {{ parent.name }}
         &lt;/span&gt;
       &lt;/div&gt;
 
-      &lt;div class=&quot;comment text-grey-darkest text-base&quot; v-html=&quot;$options.filters.parseMd(comment.body)&quot;&gt;&lt;/div&gt;
+      &lt;div class=&quot;comment text-gray-800 text-base&quot; v-html=&quot;$options.filters.parseMd(comment.body)&quot;&gt;&lt;/div&gt;
 
-      &lt;div class=&quot;text-grey-dark text-sm mt-2 mb-4 cursor-pointer&quot; @click=&quot;toggleReply&quot;&gt;
+      &lt;div class=&quot;text-gray-600 text-sm mt-2 mb-4 cursor-pointer&quot; @click=&quot;toggleReply&quot;&gt;
         &lt;span v-if=&quot;replyOpen&quot;&gt;Cancel&lt;/span&gt;
         &lt;span v-else&gt;Reply&lt;/span&gt;
       &lt;/div&gt;
     &lt;/div&gt;
 
-    &lt;ul class=&quot;ml-10 list-reset comment-list&quot; v-if=&quot;children(comment._id).length&quot;&gt;
+    &lt;ul class=&quot;ml-10 comment-list&quot; v-if=&quot;children(comment._id).length&quot;&gt;
       &lt;comment
       v-for=&quot;child in children(comment._id)&quot;
       :key=&quot;child._id&quot;
@@ -1091,12 +1097,12 @@ export default {
 <p>SanitzeHtml seems to cope with this XSS payload well and mitigates all attempted attacks.</p>
 <h2 id="adding-a-little-styling">Adding a Little Styling</h2>
 <p>Let&#39;s add a tiny bit of css for our comments, so update your main.css to the following:</p>
-<pre><code class="language-css">@tailwind preflight;
+<pre><code class="language-css">@tailwind base;
 
 @tailwind components;
 
 a {
-  @apply text-blue-light no-underline;
+  @apply text-blue-400;
 }
 
 .content {
@@ -1145,15 +1151,15 @@ table {
 }
 
 table tr {
-  @apply bg-white border-t border-grey-light;
+  @apply bg-white border-t border-gray-400;
 }
 
 table th, table td {
-  @apply border border-grey-light py-2 px-4;
+  @apply border border-gray-400 py-2 px-4;
 }
 
 .search-results em {
-  @apply roman bg-blue-lighter;
+  @apply not-italic bg-blue-200;
 }
 /* purgecss end ignore */
 
@@ -1221,27 +1227,27 @@ foreach($post[&#39;comments&#39;] as $item){
 }</code></pre>
 <h2 id="adding-comment-count-to-posts">Adding Comment Count to Posts</h2>
 <p>To add a little comment count to the top of each post you can edit a small part of the following files - <code>index.vue</code>, <code>_page.vue</code> and <code>_tag.vue</code> to the following:</p>
-<pre><code class="language-html">&lt;div class=&quot;text-grey-dark font-bold text-sm tracking-wide&quot;&gt;
+<pre><code class="language-html">&lt;div class=&quot;text-gray-600 font-bold text-sm tracking-wide&quot;&gt;
   {{ post._created | toDate }}
   &lt;span class=&quot;ml-1 text-xs&quot;&gt;•&lt;/span&gt;
   &lt;a v-for=&quot;tag in post.tags&quot; :key=&quot;tag&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1&quot;&gt;#{{ tag }}&lt;/a&gt;
   &lt;span class=&quot;mx-1 text-xs&quot;&gt;•&lt;/span&gt;
   &lt;span&gt;
     {{ post.comments ? post.comments.length : 0 }}
-    &lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;-2 -2 24 24&quot; width=&quot;12&quot; height=&quot;12&quot; preserveAspectRatio=&quot;xMinYMin&quot; class=&quot;text-grey-dark fill-current&quot;&gt;
+    &lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;-2 -2 24 24&quot; width=&quot;12&quot; height=&quot;12&quot; preserveAspectRatio=&quot;xMinYMin&quot; class=&quot;inline-block text-gray-600 fill-current&quot;&gt;
       &lt;path d=&quot;M3 .565h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-6.958l-6.444 4.808A1 1 0 0 1 2 18.57v-4.006a2 2 0 0 1-2-2v-9a3 3 0 0 1 3-3z&quot;&gt;&lt;/path&gt;
     &lt;/svg&gt;
   &lt;/span&gt;
 &lt;/div&gt;</code></pre>
 <p>and then in <code>_title_slug.vue</code> to this so we can click the comment count and be taken straight to the comment section:</p>
-<pre><code class="language-html">&lt;div class=&quot;text-grey-dark font-bold text-sm tracking-wide&quot;&gt;
+<pre><code class="language-html">&lt;div class=&quot;text-gray-600 font-bold text-sm tracking-wide&quot;&gt;
   {{ post._created | toDate }}
   &lt;span class=&quot;ml-1 text-xs&quot;&gt;•&lt;/span&gt;
   &lt;a v-for=&quot;tag in post.tags&quot; :key=&quot;tag&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1&quot;&gt;#{{ tag }}&lt;/a&gt;
   &lt;span class=&quot;mx-1 text-xs&quot;&gt;•&lt;/span&gt;
-  &lt;a href=&quot;#comments&quot; class=&quot;no-underline text-grey-dark&quot;&gt;
+  &lt;a href=&quot;#comments&quot; class=&quot;text-gray-600&quot;&gt;
     {{ post.comments ? post.comments.length : 0 }}
-    &lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;-2 -2 24 24&quot; width=&quot;12&quot; height=&quot;12&quot; preserveAspectRatio=&quot;xMinYMin&quot; class=&quot;text-grey-dark fill-current&quot;&gt;
+    &lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;-2 -2 24 24&quot; width=&quot;12&quot; height=&quot;12&quot; preserveAspectRatio=&quot;xMinYMin&quot; class=&quot;inline-block text-gray-600 fill-current&quot;&gt;
       &lt;path d=&quot;M3 .565h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-6.958l-6.444 4.808A1 1 0 0 1 2 18.57v-4.006a2 2 0 0 1-2-2v-9a3 3 0 0 1 3-3z&quot;&gt;&lt;/path&gt;
     &lt;/svg&gt;
   &lt;/a&gt;
@@ -1378,10 +1384,10 @@ FORMS_TOKEN=${process.env.FORMS_TOKEN}
 <p>First we&#39;ll just update our PageNav.vue component to add a link to the new page:</p>
 <pre><code class="language-html">&lt;template&gt;
   &lt;nav class=&quot;text-center my-4&quot;&gt;
-    &lt;a href=&quot;/&quot; class=&quot;p-2 text-sm sm:text-lg inline-block text-grey-darkest no-underline hover:underline&quot;&gt;Blog&lt;/a&gt;
-    &lt;a href=&quot;/about&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-grey-darkest no-underline hover:underline&quot;&gt;About&lt;/a&gt;
-    &lt;a href=&quot;/search&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-grey-darkest no-underline hover:underline&quot;&gt;Search&lt;/a&gt;
-    &lt;a href=&quot;/contact&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-grey-darkest no-underline hover:underline&quot;&gt;Contact&lt;/a&gt;
+    &lt;a href=&quot;/&quot; class=&quot;p-2 text-sm sm:text-lg inline-block text-gray-800 hover:underline&quot;&gt;Blog&lt;/a&gt;
+    &lt;a href=&quot;/about&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-gray-800 hover:underline&quot;&gt;About&lt;/a&gt;
+    &lt;a href=&quot;/search&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-gray-800 hover:underline&quot;&gt;Search&lt;/a&gt;
+    &lt;a href=&quot;/contact&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-gray-800 hover:underline&quot;&gt;Contact&lt;/a&gt;
   &lt;/nav&gt;
 &lt;/template&gt;</code></pre>
 <p>Then create a new file in the pages directory called <code>contact.vue</code> and put the following inside.</p>
@@ -1397,20 +1403,20 @@ FORMS_TOKEN=${process.env.FORMS_TOKEN}
     &lt;form @submit=&quot;checkForm&quot; method=&quot;post&quot;&gt;
       &lt;div class=&quot;mb-4&quot;&gt;
         &lt;label for=&quot;name&quot;&gt;Name:&lt;/label&gt;
-        &lt;input v-model=&quot;name&quot; type=&quot;text&quot; name=&quot;name&quot; placeholder=&quot;Your Name&quot; class=&quot;block mt-2 bg-grey-lighter rounded w-full py-2 px-3&quot;&gt;
+        &lt;input v-model=&quot;name&quot; type=&quot;text&quot; name=&quot;name&quot; placeholder=&quot;Your Name&quot; class=&quot;block mt-2 bg-gray-200 rounded w-full py-2 px-3&quot;&gt;
       &lt;/div&gt;
       &lt;div class=&quot;mb-4&quot;&gt;
         &lt;label for=&quot;mail&quot;&gt;Email:&lt;/label&gt;
-        &lt;input v-model=&quot;email&quot; type=&quot;email&quot; name=&quot;email&quot; placeholder=&quot;Your Email&quot; class=&quot;block mt-2 bg-grey-lighter rounded w-full py-2 px-3&quot;&gt;
+        &lt;input v-model=&quot;email&quot; type=&quot;email&quot; name=&quot;email&quot; placeholder=&quot;Your Email&quot; class=&quot;block mt-2 bg-gray-200 rounded w-full py-2 px-3&quot;&gt;
       &lt;/div&gt;
       &lt;div class=&quot;mb-4&quot;&gt;
         &lt;label for=&quot;msg&quot;&gt;Message:&lt;/label&gt;
-        &lt;textarea v-model=&quot;message&quot; name=&quot;message&quot; placeholder=&quot;Your Message&quot; class=&quot;block mt-2 bg-grey-lighter rounded w-full py-2 px-3&quot;&gt;&lt;/textarea&gt;
+        &lt;textarea v-model=&quot;message&quot; name=&quot;message&quot; placeholder=&quot;Your Message&quot; class=&quot;block mt-2 bg-gray-200 rounded w-full py-2 px-3&quot;&gt;&lt;/textarea&gt;
       &lt;/div&gt;
       &lt;div class=&quot;mb-4&quot;&gt;
-        &lt;input type=&quot;submit&quot; value=&quot;Send message&quot; :class=&quot;{ &#39;cursor-not-allowed opacity-50&#39;: loading }&quot; class=&quot;cursor-pointer bg-blue hover:bg-blue-light text-white font-bold py-2 px-4 border-b-4 border-blue-dark hover:border-blue rounded&quot;&gt;
+        &lt;input type=&quot;submit&quot; value=&quot;Send message&quot; :class=&quot;{ &#39;cursor-not-allowed opacity-50&#39;: loading }&quot; class=&quot;cursor-pointer bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-600 hover:border-blue-500 rounded&quot;&gt;
       &lt;/div&gt;
-      &lt;div v-if=&quot;errors.length&quot; class=&quot;mb-4 text-red&quot;&gt;
+      &lt;div v-if=&quot;errors.length&quot; class=&quot;mb-4 text-red-500&quot;&gt;
         &lt;b&gt;Please correct the following error(s):&lt;/b&gt;
         &lt;ul&gt;
           &lt;li v-for=&quot;error in errors&quot; :key=&quot;error&quot;&gt;
@@ -1418,7 +1424,7 @@ FORMS_TOKEN=${process.env.FORMS_TOKEN}
           &lt;/li&gt;
         &lt;/ul&gt;
       &lt;/div&gt;
-      &lt;div v-if=&quot;success&quot; class=&quot;text-green&quot;&gt;
+      &lt;div v-if=&quot;success&quot; class=&quot;text-green-500&quot;&gt;
         &lt;b&gt;Your message has been sent succesfully&lt;/b&gt;
       &lt;/div&gt;
     &lt;/form&gt;
@@ -1785,9 +1791,9 @@ SEARCH_URL=${process.env.SEARCH_URL}
 <p>First we&#39;ll just update our PageNav.vue component to add a link to the new page:</p>
 <pre><code class="language-html">&lt;template&gt;
   &lt;nav class=&quot;text-center my-4&quot;&gt;
-    &lt;a href=&quot;/&quot; class=&quot;p-2 text-sm sm:text-lg inline-block text-grey-darkest no-underline hover:underline&quot;&gt;Blog&lt;/a&gt;
-    &lt;a href=&quot;/about&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-grey-darkest no-underline hover:underline&quot;&gt;About&lt;/a&gt;
-    &lt;a href=&quot;/search&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-grey-darkest no-underline hover:underline&quot;&gt;Search&lt;/a&gt;
+    &lt;a href=&quot;/&quot; class=&quot;p-2 text-sm sm:text-lg inline-block text-gray-800 hover:underline&quot;&gt;Blog&lt;/a&gt;
+    &lt;a href=&quot;/about&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-gray-800 hover:underline&quot;&gt;About&lt;/a&gt;
+    &lt;a href=&quot;/search&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-gray-800 hover:underline&quot;&gt;Search&lt;/a&gt;
   &lt;/nav&gt;
 &lt;/template&gt;</code></pre>
 <p>In the pages directory of your blog add a new file called <code>search.vue</code> and put the following inside it:</p>
@@ -1801,16 +1807,16 @@ SEARCH_URL=${process.env.SEARCH_URL}
 
       &lt;div class=&quot;my-8&quot;&gt;
 
-        &lt;input type=&quot;text&quot; name=&quot;searchTerm&quot; v-model=&quot;searchTerm&quot; placeholder=&quot;Search Posts...&quot; class=&quot;text-center block mt-2 bg-grey-lighter rounded w-full py-2 px-3&quot;&gt;
+        &lt;input type=&quot;text&quot; name=&quot;searchTerm&quot; v-model=&quot;searchTerm&quot; placeholder=&quot;Search Posts...&quot; class=&quot;text-center block mt-2 bg-gray-200 rounded w-full py-2 px-3&quot;&gt;
 
         &lt;div v-if=&quot;results.length !==0&quot; class=&quot;search-results&quot;&gt;
-          &lt;a v-for=&#39;result in results&#39; :key=&quot;result.title_slug&quot; :href=&quot;&#39;/&#39;+result.title_slug&quot; class=&quot;block text-grey-darkest no-underline p-3 text-left&quot;&gt;
+          &lt;a v-for=&#39;result in results&#39; :key=&quot;result.title_slug&quot; :href=&quot;&#39;/&#39;+result.title_slug&quot; class=&quot;block text-gray-800 p-3 text-left&quot;&gt;
             {{ result.title }}
           &lt;/a&gt;
         &lt;/div&gt;
 
         &lt;div v-else-if=&quot;searchTerm.length &gt;= 3&quot;&gt;
-          &lt;span class=&quot;block text-grey-darkest no-underline p-3 text-left&quot;&gt;
+          &lt;span class=&quot;block text-gray-800 p-3 text-left&quot;&gt;
             No results found
           &lt;/span&gt;
         &lt;/div&gt;
@@ -1859,7 +1865,7 @@ export default {
 <p>You can add something like this to main.css</p>
 <pre><code class="language-css">/* purgecss ignore */
 .search-results em {
-  @apply roman bg-blue-lighter;
+  @apply not-italic bg-blue-200;
 }</code></pre>
 <p>I&#39;ve added a purgecss ignore comment here to make sure this css isn&#39;t removed when we build the site because <code>.search-results em</code> will not actually exist at build time as it is only present if we search on the client side so the css would be removed otherwise.</p>
 <p>We could also add highlighting for the post excerpt. However the excerpt may be too long so we don&#39;t want to display the whole thing in the results. </p>
@@ -1876,17 +1882,17 @@ export default {
 
       &lt;div class=&quot;my-8&quot;&gt;
 
-        &lt;input type=&quot;text&quot; name=&quot;searchTerm&quot; v-model=&quot;searchTerm&quot; placeholder=&quot;Search Posts...&quot; class=&quot;text-center block mb-4 shadow rounded w-full py-2 px-3 text-dark-grey&quot;&gt;
+        &lt;input type=&quot;text&quot; name=&quot;searchTerm&quot; v-model=&quot;searchTerm&quot; placeholder=&quot;Search Posts...&quot; class=&quot;text-center block mb-4 shadow text-gray-600 rounded w-full py-2 px-3&quot;&gt;
 
         &lt;div v-if=&quot;results.length !==0&quot; class=&quot;search-results&quot;&gt;
-          &lt;a v-for=&#39;result in results&#39; :key=&quot;result.title_slug&quot; :href=&quot;&#39;/&#39;+result.title_slug&quot; class=&quot;block text-grey-darkest no-underline p-3 text-left&quot;&gt;
+          &lt;a v-for=&#39;result in results&#39; :key=&quot;result.title_slug&quot; :href=&quot;&#39;/&#39;+result.title_slug&quot; class=&quot;block text-gray-800 p-3 text-left&quot;&gt;
             &lt;span v-html=&quot;result._highlightResult.title.value&quot; class=&quot;block font-bold mb-1&quot;&gt;&lt;/span&gt;
             &lt;span v-html=&quot;result._snippetResult.excerpt.value&quot;&gt;&lt;/span&gt;
           &lt;/a&gt;
         &lt;/div&gt;
 
         &lt;div v-else-if=&quot;searchTerm.length &gt;= 3&quot;&gt;
-          &lt;span class=&quot;block text-grey-darkest no-underline p-3 text-left&quot;&gt;
+          &lt;span class=&quot;block text-gray-800 p-3 text-left&quot;&gt;
             No results found
           &lt;/span&gt;
         &lt;/div&gt;
@@ -1957,30 +1963,30 @@ export default {
     &lt;div class=my-8&gt;
       &lt;h1 class=&quot;mb-6&quot;&gt;Blog Page {{ page }}&lt;/h1&gt;
       &lt;ul class=&quot;flex flex-col w-full p-0&quot;&gt;
-        &lt;li class=&quot;mb-6 w-full list-reset&quot; v-for=&quot;(post, key) in posts&quot; :key=&quot;key&quot;&gt;
-          &lt;div class=&quot;text-grey-dark font-bold text-sm tracking-wide&quot;&gt;
+        &lt;li class=&quot;mb-6 w-full&quot; v-for=&quot;(post, key) in posts&quot; :key=&quot;key&quot;&gt;
+          &lt;div class=&quot;text-gray-600 font-bold text-sm tracking-wide&quot;&gt;
             {{ post._created | toDate }}
-            &lt;a v-for=&quot;(tag, key) in post.tags&quot; :key=&quot;key&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1 no-underline&quot;&gt;{{ tag }}&lt;/a&gt;
+            &lt;a v-for=&quot;(tag, key) in post.tags&quot; :key=&quot;key&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1&quot;&gt;{{ tag }}&lt;/a&gt;
           &lt;/div&gt;
 
-          &lt;a :href=&quot;&#39;/&#39;+post.title_slug&quot; class=&quot;no-underline&quot;&gt;
-            &lt;h2 class=&quot;my-2 text-grey-darkest text-lg lg:text-xl&quot;&gt;
+          &lt;a :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
+            &lt;h2 class=&quot;my-2 text-gray-800 text-lg lg:text-xl font-bold&quot;&gt;
               {{ post.title }}
             &lt;/h2&gt;
           &lt;/a&gt;
 
           &lt;div class=&quot;page-content hidden md:block text-base mb-2&quot; v-html=&quot;post.excerpt&quot;&gt;
           &lt;/div&gt;
-          &lt;a class=&quot;text-sm text-blue-light no-underline&quot; :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
+          &lt;a class=&quot;text-sm text-blue-400&quot; :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
             Read more
           &lt;/a&gt;
         &lt;/li&gt;
       &lt;/ul&gt;
       &lt;div class=&quot;flex justify-center mt-8&quot;&gt;
-        &lt;a :href=&quot;page === &#39;2&#39; ? &#39;/&#39; : `/blog/${Number(page)-1}`&quot; class=&quot;text-sm no-underline pr-2&quot;&gt;
+        &lt;a :href=&quot;page === &#39;2&#39; ? &#39;/&#39; : `/blog/${Number(page)-1}`&quot; class=&quot;text-sm pr-2&quot;&gt;
           Previous Page
         &lt;/a&gt;
-        &lt;a v-if=&quot;hasNext&quot; :href=&quot;`/blog/${Number(page)+1}`&quot; class=&quot;text-sm no-underline pl-2&quot;&gt;
+        &lt;a v-if=&quot;hasNext&quot; :href=&quot;`/blog/${Number(page)+1}`&quot; class=&quot;text-sm pl-2&quot;&gt;
           Next Page
         &lt;/a&gt;
       &lt;/div&gt;
@@ -2027,27 +2033,27 @@ export default {
   &lt;section&gt;
     &lt;div class=my-8&gt;
       &lt;ul class=&quot;flex flex-col w-full p-0&quot;&gt;
-        &lt;li class=&quot;mb-6 w-full list-reset&quot; v-for=&quot;(post, key) in posts&quot; :key=&quot;key&quot;&gt;
-          &lt;div class=&quot;text-grey-dark font-bold text-sm tracking-wide&quot;&gt;
+        &lt;li class=&quot;mb-6 w-full&quot; v-for=&quot;(post, key) in posts&quot; :key=&quot;key&quot;&gt;
+          &lt;div class=&quot;text-gray-600 font-bold text-sm tracking-wide&quot;&gt;
             {{ post._created | toDate }}
-            &lt;a v-for=&quot;tag in post.tags&quot; :key=&quot;tag&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1 no-underline&quot;&gt;{{ tag }}&lt;/a&gt;
+            &lt;a v-for=&quot;tag in post.tags&quot; :key=&quot;tag&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1&quot;&gt;{{ tag }}&lt;/a&gt;
           &lt;/div&gt;
 
-          &lt;a :href=&quot;&#39;/&#39;+post.title_slug&quot; class=&quot;no-underline&quot;&gt;
-            &lt;h2 class=&quot;my-2 text-grey-darkest text-lg lg:text-xl&quot;&gt;
+          &lt;a :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
+            &lt;h2 class=&quot;my-2 text-gray-800 text-lg lg:text-xl font-bold&quot;&gt;
               {{ post.title }}
             &lt;/h2&gt;
           &lt;/a&gt;
 
           &lt;div class=&quot;page-content hidden md:block text-base mb-2&quot; v-html=&quot;post.excerpt&quot;&gt;
           &lt;/div&gt;
-          &lt;a class=&quot;text-sm text-blue-light no-underline&quot; :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
+          &lt;a class=&quot;text-sm text-blue-400&quot; :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
             Read more
           &lt;/a&gt;
         &lt;/li&gt;
       &lt;/ul&gt;
       &lt;div v-if=&quot;hasNext&quot; class=&quot;flex justify-center mt-8&quot;&gt;
-        &lt;a href=&quot;/blog/2&quot; class=&quot;text-sm no-underline&quot;&gt;
+        &lt;a href=&quot;/blog/2&quot; class=&quot;text-sm&quot;&gt;
           Next Page
         &lt;/a&gt;
       &lt;/div&gt;
@@ -3069,10 +3075,10 @@ URL=${process.env.URL}
 <pre><code class="language-html">&lt;template&gt;
   &lt;section&gt;
     &lt;article class=&quot;my-8&quot;&gt;
-      &lt;div class=&quot;text-grey-dark font-bold text-sm tracking-wide&quot;&gt;
-        &lt;a v-for=&quot;(tag, key) in post.tags&quot; :key=&quot;key&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1 no-underline&quot;&gt;{{ tag }}&lt;/a&gt;
+      &lt;div class=&quot;text-gray-600 font-bold text-sm tracking-wide&quot;&gt;
+        &lt;a v-for=&quot;(tag, key) in post.tags&quot; :key=&quot;key&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1&quot;&gt;{{ tag }}&lt;/a&gt;
       &lt;/div&gt;
-      &lt;h1 class=&quot;mt-2&quot;&gt;
+      &lt;h1 class=&quot;mt-2 text-3xl font-bold&quot;&gt;
         {{ post.title }}
       &lt;/h1&gt;
       &lt;div class=&quot;mt-4 markdown&quot; v-html=&quot;post.excerpt + &#39;\n&#39; + post.content&quot;&gt;
@@ -3225,20 +3231,20 @@ Vue.filter(&#39;parseMd&#39;, function(content) {
     &lt;div class=my-8&gt;
       &lt;h1 class=&quot;mb-6&quot;&gt;Posts tagged with &quot;{{ category }}&quot;&lt;/h1&gt;
       &lt;ul class=&quot;flex flex-col w-full p-0&quot;&gt;
-        &lt;li class=&quot;mb-6 w-full list-reset&quot; v-for=&quot;(post, key) in posts&quot; :key=&quot;key&quot;&gt;
-          &lt;div class=&quot;text-grey-dark font-bold text-sm tracking-wide&quot;&gt;
-            &lt;a v-for=&quot;(tag, key) in post.tags&quot; :key=&quot;key&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1 no-underline&quot;&gt;{{ tag }}&lt;/a&gt;
+        &lt;li class=&quot;mb-6 w-full&quot; v-for=&quot;(post, key) in posts&quot; :key=&quot;key&quot;&gt;
+          &lt;div class=&quot;text-gray-600 font-bold text-sm tracking-wide&quot;&gt;
+            &lt;a v-for=&quot;(tag, key) in post.tags&quot; :key=&quot;key&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1&quot;&gt;{{ tag }}&lt;/a&gt;
           &lt;/div&gt;
 
-          &lt;a :href=&quot;&#39;/&#39;+post.title_slug&quot; class=&quot;no-underline&quot;&gt;
-            &lt;h2 class=&quot;my-2 text-grey-darkest text-lg lg:text-xl&quot;&gt;
+          &lt;a :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
+            &lt;h2 class=&quot;my-2 text-gray-800 text-lg lg:text-xl font-bold&quot;&gt;
               {{ post.title }}
             &lt;/h2&gt;
           &lt;/a&gt;
 
           &lt;div class=&quot;page-content hidden md:block text-base mb-2&quot; v-html=&quot;post.excerpt&quot;&gt;
           &lt;/div&gt;
-          &lt;a class=&quot;text-sm text-blue-light no-underline&quot; :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
+          &lt;a class=&quot;text-sm text-blue-400&quot; :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
             Read more
           &lt;/a&gt;
         &lt;/li&gt;
@@ -3287,7 +3293,7 @@ export default {
         <summary type="html"><![CDATA[If you've ever felt WordPress is too bloated and slow then you might want to try out building a statically generated blog, using a static site generator and a headless CMS.]]></summary>
         <content type="html"><![CDATA[<h2 id="what-well-be-building">What we&#39;ll be building</h2>
 <blockquote>
-<p>Updated for Nuxt 2!</p>
+<p>Updated for Nuxt 2 and Tailwindcss 1.0!</p>
 </blockquote>
 <p>Tldr; You can check out the GitHub repo of the finished blog <a href="https://github.com/willbrowningme/nuxt-cockpit-static-blog">here</a> and see a live demo on Netlify - <a href="https://nuxt-cockpit-static-blog.netlify.com/">https://nuxt-cockpit-static-blog.netlify.com</a></p>
 <p>We&#39;ll be using the <code>generate</code> feature of <a href="https://nuxtjs.org">Nuxt.js</a> to generate a static blog and a headless CMS called <a href="https://getcockpit.com">Cockpit</a> for the api.</p>
@@ -3393,9 +3399,9 @@ POSTS_URL=http://cms.yourdomain.com/api/collections/get/posts?token=YOUR-API-TOK
 <pre><code class="language-bash">npm install tailwindcss --save-dev</code></pre>
 <h2 id="setting-up-tailwindcss-with-purgecss">Setting up Tailwindcss with Purgecss</h2>
 <p>Next initiate the tailwind config file by running:</p>
-<pre><code class="language-bash">./node_modules/.bin/tailwind init tailwind.js</code></pre>
+<pre><code class="language-bash">./node_modules/.bin/tailwind init tailwind.config.js</code></pre>
 <p>Create a new directory called css inside the assets directory and then create a file in here called <code>main.css</code> and add the following to it:</p>
-<pre><code class="language-css">@tailwind preflight;
+<pre><code class="language-css">@tailwind base;
 
 @tailwind components;
 
@@ -3406,7 +3412,7 @@ POSTS_URL=http://cms.yourdomain.com/api/collections/get/posts?token=YOUR-API-TOK
 <p>In the root of the project create a file called <code>postcss.config.js</code> and insert the following:</p>
 <pre><code class="language-javascript">module.exports = {
   plugins: [
-    require(&#39;tailwindcss&#39;)(&#39;./tailwind.js&#39;),
+    require(&#39;tailwindcss&#39;)(&#39;./tailwind.config.js&#39;),
     require(&#39;autoprefixer&#39;)
   ]
 }</code></pre>
@@ -3476,20 +3482,22 @@ build: {
 <p>Inside the components directory create three new files; <code>PageHeader.vue</code> <code>PageNav.vue</code> and <code>PageFooter.vue</code> with the following contents respectively:</p>
 <pre><code class="language-html">&lt;template&gt;
   &lt;header class=&quot;text-center&quot;&gt;
-    &lt;h1&gt;
-        &lt;a class=&quot;no-underline text-grey-darkest&quot; href=&quot;/&quot;&gt;Static Blog&lt;/a&gt;
-    &lt;/h1&gt;
+    &lt;a class=&quot;text-gray-800 text-3xl font-bold&quot; href=&quot;/&quot;&gt;
+      &lt;h1&gt;
+        Static Blog
+      &lt;/h1&gt;
+    &lt;/a&gt;
   &lt;/header&gt;
 &lt;/template&gt;</code></pre>
 <pre><code class="language-html">&lt;template&gt;
   &lt;nav class=&quot;text-center my-4&quot;&gt;
-    &lt;a href=&quot;/&quot; class=&quot;p-2 text-sm sm:text-lg inline-block text-grey-darkest no-underline hover:underline&quot;&gt;Blog&lt;/a&gt;
-    &lt;a href=&quot;/about&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-grey-darkest no-underline hover:underline&quot;&gt;About&lt;/a&gt;
+    &lt;a href=&quot;/&quot; class=&quot;p-2 text-sm sm:text-lg inline-block text-gray-800 hover:underline&quot;&gt;Blog&lt;/a&gt;
+    &lt;a href=&quot;/about&quot; class=&quot;p-2 text-sm sm:text-lg p-2 inline-block text-gray-800 hover:underline&quot;&gt;About&lt;/a&gt;
   &lt;/nav&gt;
 &lt;/template&gt;</code></pre>
 <pre><code class="language-html">&lt;template&gt;
   &lt;footer class=&quot;flex justify-center my-4&quot;&gt;
-    &lt;div class=&quot;text-grey-dark text-sm&quot;&gt;
+    &lt;div class=&quot;text-gray-800 text-sm&quot;&gt;
       A static blog built with Nuxt.js, Tailwindcss and Cockpit.
     &lt;/div&gt;
   &lt;/footer&gt;
@@ -3537,25 +3545,33 @@ pre {
 }</code></pre>
 <p>Now we just need to update index.vue in the pages directory.</p>
 <h2 id="fetching-and-displaying-our-posts">Fetching and displaying our posts</h2>
+<p>Make sure that you have the axios module loaded correctly in your <code>nuxt.config.js</code></p>
+<pre><code class="language-js">/*
+** Nuxt.js modules
+*/
+modules: [
+  // Doc: https://github.com/nuxt-community/axios-module#usage
+  &#39;@nuxtjs/axios&#39;
+],</code></pre>
 <p>In the index.vue page update the file so that it resembles the following:</p>
 <pre><code class="language-html">&lt;template&gt;
   &lt;section&gt;
     &lt;div class=my-8&gt;
       &lt;ul class=&quot;flex flex-col w-full p-0&quot;&gt;
-        &lt;li class=&quot;mb-6 w-full list-reset&quot; v-for=&quot;(post, key) in posts&quot; :key=&quot;key&quot;&gt;
-          &lt;div class=&quot;text-grey-dark font-bold text-sm tracking-wide&quot;&gt;
-            &lt;a v-for=&quot;tag in post.tags&quot; :key=&quot;tag&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1 no-underline&quot;&gt;{{ tag }}&lt;/a&gt;
+        &lt;li class=&quot;mb-6 w-full&quot; v-for=&quot;(post, key) in posts&quot; :key=&quot;key&quot;&gt;
+          &lt;div class=&quot;text-gray-600 font-bold text-sm tracking-wide&quot;&gt;
+            &lt;a v-for=&quot;tag in post.tags&quot; :key=&quot;tag&quot; :href=&quot;&#39;/category/&#39;+tag&quot; class=&quot;ml-1&quot;&gt;{{ tag }}&lt;/a&gt;
           &lt;/div&gt;
 
-          &lt;a :href=&quot;&#39;/&#39;+post.title_slug&quot; class=&quot;no-underline&quot;&gt;
-            &lt;h2 class=&quot;my-2 text-grey-darkest text-lg lg:text-xl&quot;&gt;
+          &lt;a :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
+            &lt;h2 class=&quot;my-2 text-gray-800 text-lg lg:text-xl font-bold&quot;&gt;
               {{ post.title }}
             &lt;/h2&gt;
           &lt;/a&gt;
 
           &lt;div class=&quot;page-content hidden md:block text-base mb-2&quot; v-html=&quot;post.excerpt&quot;&gt;
           &lt;/div&gt;
-          &lt;a class=&quot;text-sm text-blue-light no-underline&quot; :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
+          &lt;a class=&quot;text-sm text-blue-400 no-underline&quot; :href=&quot;&#39;/&#39;+post.title_slug&quot;&gt;
             Read more
           &lt;/a&gt;
         &lt;/li&gt;
