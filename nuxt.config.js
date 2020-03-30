@@ -51,6 +51,9 @@ module.exports = {
     '@nuxtjs/sitemap',
     '@nuxtjs/feed',
   ],
+  axios: {
+    browserBaseURL: '/'
+  },
   plugins: [
     '~/plugins/vue-filters'
   ],
