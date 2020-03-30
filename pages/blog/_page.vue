@@ -50,7 +50,8 @@ export default {
         hasNext: payload.hasNext,
         totalPages: payload.totalPages
       }
-    } else {
+    } //else {
+    if(process.env.POSTS_URL) {
       const { data } = await app.$axios.post(process.env.POSTS_URL,
       JSON.stringify({
           filter: { published: true },

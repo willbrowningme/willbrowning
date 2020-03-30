@@ -16,9 +16,6 @@ class TailwindExtractor {
 
 module.exports = {
   mode: 'universal',
-  env: {
-    baseUrl: 'https://willbrowning.me'
-  },
   /*
   ** Headers of the page
   */

@@ -41,7 +41,8 @@ export default {
         prevPost: payload.prevPost,
         nextPost: payload.nextPost
       }
-    } else {
+    } //else {
+    if(process.env.POSTS_URL) {
       const { data } = await app.$axios.post(process.env.POSTS_URL,
       JSON.stringify({
           filter: { published: true, title_slug: params.title_slug },
