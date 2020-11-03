@@ -1,4 +1,28 @@
 module.exports = {
+  purge: {
+    mode: 'layers',
+    content: [
+      './pages/**/*.vue',
+      './layouts/**/*.vue',
+      './components/**/*.vue',
+    ],
+    options: {
+      whitelist: [
+        'html',
+        'body',
+        'ul',
+        'ol',
+        'pre',
+        'code',
+        'blockquote',
+        'blog-image',
+        'blog-note',
+        'blog-image',
+        'mt-4'
+      ],
+      whitelistPatterns: [/\bhljs\S*/]
+    }
+  },
   theme: {
     extend: {
       colors: {

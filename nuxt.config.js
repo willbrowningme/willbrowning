@@ -1,6 +1,4 @@
 require('dotenv').config()
-const PurgecssPlugin = require('purgecss-webpack-plugin')
-const glob = require('glob-all')
 const path = require('path')
 const axios = require('axios')
 const marked = require('marked')
@@ -8,14 +6,8 @@ const collect = require('collect.js')
 
 const perPage = Number(process.env.PER_PAGE)
 
-class TailwindExtractor {
-  static extract(content) {
-    return content.match(/[A-Za-z0-9-_:\/]+/g) || [];
-  }
-}
-
 module.exports = {
-  mode: 'universal',
+  target: 'static',
   /*
   ** Headers of the page
   */
@@ -50,6 +42,7 @@ module.exports = {
     '@nuxtjs/axios',
     '@nuxtjs/sitemap',
     '@nuxtjs/feed',
+    '@nuxtjs/tailwindcss',
   ],
   axios: {
     browserBaseURL: '/'
@@ -58,7 +51,7 @@ module.exports = {
     '~/plugins/vue-filters'
   ],
   css: [
-    '~/assets/css/main.css',
+    '~/assets/css/tailwind.css',
     'highlight.js/styles/dracula.css',
   ],
   generate: {
@@ -202,50 +195,5 @@ module.exports = {
   /*
   ** Build configuration
   */
-  build: {
-    extractCSS: true,
-    /*
-    ** Run ESLint on save
-    */
-    extend (config, { isDev }) {
-      if (!isDev) {
-        // Remove unused CSS using purgecss. See https://github.com/FullHuman/purgecss
-        // for more information about purgecss.
-        config.plugins.push(
-          new PurgecssPlugin({
-
-            // Specify the locations of any files you want to scan for class names.
-            paths: glob.sync([
-              path.join(__dirname, 'pages/**/*.vue'),
-              path.join(__dirname, 'layouts/**/*.vue'),
-              path.join(__dirname, 'components/**/*.vue')
-            ]),
-            extractors: [
-              {
-                extractor: TailwindExtractor,
-
-                // Specify the file extensions to include when scanning for
-                // class names.
-                extensions: ["html", "vue"]
-              }
-            ],
-            whitelist: [
-              "html",
-              "body",
-              "ul",
-              "ol",
-              "pre",
-              "code",
-              "blockquote",
-              "blog-image",
-              "blog-note",
-              "blog-image",
-              "mt-4"
-            ],
-            whitelistPatterns: [/\bhljs\S*/]
-          })
-        )
-      }
-    }
-  }
+  build: {}
 }
