@@ -6,7 +6,7 @@ const collect = require('collect.js')
 const perPage = Number(process.env.PER_PAGE)
 
 module.exports = {
-  target: 'static',
+  //target: 'static',
   /*
   ** Headers of the page
   */
