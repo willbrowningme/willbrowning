@@ -1,5 +1,4 @@
 require('dotenv').config()
-const path = require('path')
 const axios = require('axios')
 const marked = require('marked')
 const collect = require('collect.js')
@@ -118,9 +117,10 @@ module.exports = {
   sitemap: {
     path: '/sitemap.xml',
     hostname: process.env.URL,
+    gzip: false,
     cacheTime: 1000 * 60 * 15,
     generate: true, // Enable me when using nuxt generate
-    async routes () {
+    routes: async () => {
       const { data } = await axios.post(process.env.POSTS_URL,
       JSON.stringify({
           filter: { published: true },

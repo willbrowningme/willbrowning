@@ -35,13 +35,13 @@ export default {
     PageNav
   },
   async asyncData ({ app, params, error, payload }) {
-    if (payload) {
+    /* if (payload) {
       return {
         post: payload.post,
         prevPost: payload.prevPost,
         nextPost: payload.nextPost
       }
-    } else if(process.server){
+    } else { */
       const { data } = await app.$axios.post(process.env.POSTS_URL,
       JSON.stringify({
           filter: { published: true, title_slug: params.title_slug },
@@ -61,7 +61,7 @@ export default {
         prevPost: null,
         nextPost: null
       }
-    }
+    //}
   },
   head() {
     return {

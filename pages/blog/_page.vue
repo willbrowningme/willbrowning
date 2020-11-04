@@ -43,14 +43,14 @@ export default {
     PostList
   },
   async asyncData ({ app, params, error, payload }) {
-    if (payload) {
+    /* if (payload) {
       return {
         posts: payload.posts,
         page: params.page,
         hasNext: payload.hasNext,
         totalPages: payload.totalPages
       }
-    } else if(process.server) {
+    } else if(process.server) { */
       const { data } = await app.$axios.post(process.env.POSTS_URL,
       JSON.stringify({
           filter: { published: true },
@@ -72,7 +72,7 @@ export default {
         hasNext: params.page * process.env.PER_PAGE < data.total,
         totalPages: Math.ceil(data.total / process.env.PER_PAGE)
       }
-    }
+    //}
   },
   head() {
     return {
