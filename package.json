@@ -20,7 +20,7 @@
     "dayjs": "^1.9.4",
     "dotenv": "^6.2.0",
     "glob-all": "^3.2.1",
-    "highlight.js": "^9.18.3",
+    "highlight.js": "^10.4.1",
     "marked": "^0.7.0",
     "nuxt": "^2.14.7",
     "remove-markdown": "^0.3.0"
