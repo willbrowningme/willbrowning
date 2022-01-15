@@ -21,7 +21,7 @@
     "dotenv": "^6.2.0",
     "glob-all": "^3.2.1",
     "highlight.js": "^9.18.3",
-    "marked": "^0.7.0",
+    "marked": "^4.0.10",
     "nuxt": "^2.14.7",
     "remove-markdown": "^0.3.0"
   },
