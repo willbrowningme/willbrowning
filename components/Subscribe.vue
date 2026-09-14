@@ -9,18 +9,7 @@
         </p>
       </div>
       <div class="w-full md:w-1/2 md:ml-4">
-        <form action="https://sendy.willbrowning.me/subscribe" method="POST" accept-charset="utf-8">
-          <label for="email" class="hidden">Email</label>
-          <input type="email" name="email" id="email" class="email block shadow rounded w-full py-2 px-3 text-gray-600 mb-4 font-sans" placeholder="Your email" required/>
-          <div class="hidden">
-            <label for="hp">HP</label>
-            <input type="text" name="hp" id="hp"/>
-          </div>
-          <input type="hidden" name="list" value="G4t7tNFm3f6qoxz4mHaywQ"/>
-          <input type="hidden" name="subform" value="yes"/>
-          <input class="hidden" type="checkbox" name="gdpr" id="gdpr" checked />
-          <input type="submit" name="submit" id="submit" value="Let's Go!" class="button w-full bg-pink text-white font-bold py-2 px-4 rounded cursor-pointer font-sans tracking-wider"/>
-        </form>
+
       </div>
     </div>
 

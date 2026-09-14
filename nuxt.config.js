@@ -5,7 +5,7 @@ const collect = require('collect.js')
 
 const perPage = Number(process.env.PER_PAGE)
 
-module.exports = {
+export default {
   //target: 'static',
   /*
   ** Headers of the page
@@ -41,8 +41,92 @@ module.exports = {
     '@nuxtjs/axios',
     '@nuxtjs/sitemap',
     '@nuxtjs/feed',
-    '@nuxtjs/tailwindcss',
   ],
+  buildModules: [
+    '@nuxtjs/tailwindcss'
+  ],
+  tailwindcss: {
+    jit: true,
+    exposeConfig: true,
+    config: {
+      purge: {
+        mode: 'layers',
+        content: [
+          './pages/**/*.vue',
+          './layouts/**/*.vue',
+          './components/**/*.vue',
+        ],
+        options: {
+          whitelist: [
+            'html',
+            'body',
+            'ul',
+            'ol',
+            'pre',
+            'code',
+            'blockquote',
+            'blog-image',
+            'blog-note',
+            'blog-image',
+            'mt-4'
+          ],
+          whitelistPatterns: [/\bhljs\S*/]
+        }
+      },
+      theme: {
+        extend: {
+          colors: {
+              pink: {
+                DEFAULT: '#ff214f',
+                light: '#ffebf0'
+              },
+              purple: {
+                DEFAULT: '#661cb7',
+                light: '#eee3fc',
+              }
+          }
+        },
+        fontFamily: {
+          sans: [
+            'BlinkMacSystemFont',
+            '-apple-system',
+            'Segoe UI',
+            'Roboto',
+            'Oxygen',
+            'Ubuntu',
+            'Cantarell',
+            'Fira Sans',
+            'Droid Sans',
+            'Helvetica Neue',
+            'sans-serif',
+          ],
+          serif: [
+            '-apple-system',
+            'BlinkMacSystemFont',
+            'Segoe UI',
+            'Roboto',
+            'Helvetica',
+            'Arial',
+            'sans-serif',
+            'Apple Color Emoji',
+            'Segoe UI Emoji',
+            'Segoe UI Symbol',
+          ],
+          mono: [
+            'SFMono-Regular',
+            'Consolas',
+            'Liberation Mono',
+            'Menlo',
+            'Courier',
+            'monospace',
+          ]
+        },
+        container: {
+          center: true
+        },
+      },
+    }
+  },
   axios: {
     browserBaseURL: '/'
   },
@@ -50,8 +134,7 @@ module.exports = {
     '~/plugins/vue-filters'
   ],
   css: [
-    '~/assets/css/tailwind.css',
-    'highlight.js/styles/dracula.css',
+    '~/assets/css/tailwind.css'
   ],
   generate: {
     routes: async () => {
@@ -179,7 +262,7 @@ module.exports = {
             link: `${process.env.URL}/${post.title_slug}`,
             id: `${process.env.URL}/${post.title_slug}`,
             description: post.meta_description,
-            content: marked(post.content),
+            content: marked.parse(post.content),
             date: new Date(post._created*1000),
           })
         })

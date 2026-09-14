@@ -2,8 +2,9 @@ import Vue from 'vue'
 import dayjs from 'dayjs'
 import advancedFormat from 'dayjs/plugin/advancedFormat'
 dayjs.extend(advancedFormat)
-import highlightjs from 'highlight.js/lib/highlight.js'
-import marked, { Renderer } from 'marked'
+import highlightjs from 'highlight.js/lib/core'
+import 'highlight.js/styles/base16/dracula.css'
+import { marked, Renderer } from 'marked'
 import removeMd from 'remove-markdown'
 
 // register used languages in highlightjs
@@ -26,7 +27,7 @@ renderer.code = (code, language) => {
   // Check whether the given language is valid for highlight.js
   const validLang = !!(language && highlightjs.getLanguage(language))
   // Highlight only if the language is valid
-  const highlighted = validLang ? highlightjs.highlight(language, code).value : code
+  const highlighted = validLang ? highlightjs.highlight(code, {language}).value : code
   // Render the highlighted code with `hljs` class
   return `<pre class="md ${language}"><code class="hljs ${language}">${highlighted}</code></pre>`
 };
@@ -47,7 +48,7 @@ Vue.filter('toDate', function(timestamp) {
 })
 
 Vue.filter('parseMd', function(content) {
-    return marked(content)
+    return marked.parse(content)
 })
 
 Vue.filter('readTime', function(content) {

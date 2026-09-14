@@ -13,19 +13,19 @@
     "precommit": "npm run lint"
   },
   "dependencies": {
-    "@nuxtjs/axios": "^5.12.2",
-    "@nuxtjs/feed": "^0.1.1",
-    "@nuxtjs/sitemap": "^0.1.2",
-    "collect.js": "^4.28.4",
-    "dayjs": "^1.9.4",
-    "dotenv": "^6.2.0",
-    "glob-all": "^3.2.1",
-    "highlight.js": "^9.18.3",
-    "marked": "^0.7.0",
-    "nuxt": "^2.14.7",
-    "remove-markdown": "^0.3.0"
+    "@nuxtjs/axios": "^5.13.6",
+    "@nuxtjs/feed": "^2.0.0",
+    "@nuxtjs/sitemap": "^2.4.0",
+    "collect.js": "^4.36.1",
+    "dayjs": "^1.11.23",
+    "dotenv": "^16.6.1",
+    "glob-all": "^3.3.1",
+    "highlight.js": "^11.12.0",
+    "marked": "^4.3.0",
+    "nuxt": "^2.18.1",
+    "remove-markdown": "^0.7.0"
   },
   "devDependencies": {
-    "@nuxtjs/tailwindcss": "^3.2.0"
+    "@nuxtjs/tailwindcss": "^4.2.1"
   }
 }
