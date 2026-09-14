@@ -4,6 +4,9 @@
   "description": "willbrowning.me website",
   "author": "Will <will@willbrowning.me>",
   "private": true,
+  "engines": {
+    "node": "^14.18.0 || >=16.10.0"
+  },
   "scripts": {
     "dev": "nuxt",
     "build": "nuxt build",

@@ -1,0 +1,7 @@
+[build]
+  command = "node ./create-env.js && npm run generate"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NODE_OPTIONS = "--openssl-legacy-provider"
