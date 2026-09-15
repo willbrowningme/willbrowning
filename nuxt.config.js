@@ -5,8 +5,32 @@ const collect = require('collect.js')
 
 const perPage = Number(process.env.PER_PAGE)
 
+async function fetchPosts(payload) {
+  try {
+    const { data } = await axios.post(
+      process.env.POSTS_URL,
+      JSON.stringify(payload),
+      {
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
+    return data
+  } catch (error) {
+    const res = error.response
+    if (res) {
+      console.error('[cms] request failed', {
+        status: res.status,
+        server: res.headers.server,
+        cfRay: res.headers['cf-ray'],
+        contentType: res.headers['content-type']
+      })
+    }
+    throw error
+  }
+}
+
 export default {
-  //target: 'static',
+  target: 'static',
   /*
   ** Headers of the page
   */
@@ -138,15 +162,11 @@ export default {
   ],
   generate: {
     routes: async () => {
-      const { data } = await axios.post(process.env.POSTS_URL,
-      JSON.stringify({
+      const data = await fetchPosts({
           filter: { published: true },
           sort: {_created:-1},
           populate: 1
-        }),
-      {
-        headers: { 'Content-Type': 'application/json' }
-      })
+        })
 
       const collection = collect(data.entries)
 
@@ -204,14 +224,10 @@ export default {
     cacheTime: 1000 * 60 * 15,
     generate: true, // Enable me when using nuxt generate
     routes: async () => {
-      const { data } = await axios.post(process.env.POSTS_URL,
-      JSON.stringify({
+      const data = await fetchPosts({
           filter: { published: true },
           sort: {_created:-1}
-        }),
-      {
-        headers: { 'Content-Type': 'application/json' }
-      })
+        })
 
       const collection = collect(data.entries)
 
@@ -247,14 +263,10 @@ export default {
           copyright: 'All rights reserved, Will Browning'
         }
 
-        const { data } = await axios.post(process.env.POSTS_URL,
-        JSON.stringify({
+        const data = await fetchPosts({
             filter: { published: true },
             sort: {_created:-1}
-          }),
-        {
-          headers: { 'Content-Type': 'application/json' }
-        })
+          })
 
         data.entries.forEach(post => {
           feed.addItem({
