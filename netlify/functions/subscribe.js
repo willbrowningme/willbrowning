@@ -88,9 +88,16 @@ exports.handler = async (event) => {
     return json(400, { message: 'The spam check failed. Please try again.' })
   }
 
+  const sendyHeaders = {
+    'Content-Type': 'application/x-www-form-urlencoded'
+  }
+  if (process.env.SENDY_SUBSCRIBE_KEY) {
+    sendyHeaders['X-Subscribe-Key'] = process.env.SENDY_SUBSCRIBE_KEY
+  }
+
   const sendy = await fetch(SENDY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: sendyHeaders,
     body: new URLSearchParams({
       api_key: sendyKey,
       email,
