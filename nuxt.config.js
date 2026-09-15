@@ -31,6 +31,9 @@ async function fetchPosts(payload) {
 
 export default {
   target: 'static',
+  env: {
+    TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY || ''
+  },
   /*
   ** Headers of the page
   */

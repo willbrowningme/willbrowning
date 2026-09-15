@@ -4,3 +4,6 @@ https://willbrowning.netlify.com/* https://willbrowning.me/:splat 301!
 # Redirect blog
 /blog / 301!
 /blog/1 / 301!
+
+# Subscribe API
+/api/subscribe  /.netlify/functions/subscribe  200
