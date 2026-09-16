@@ -1,6 +1,6 @@
 <template>
   <section>
-    <article class="my-8">
+    <article v-if="post" class="my-8">
       <div class="tags text-gray-600 font-bold font-sans text-sm tracking-wider">
         <span>{{ post._created | toDate }} (Updated: {{ post._modified | toDate }})</span>
         <span class="dot-divider"></span>
@@ -30,6 +30,13 @@ export default {
   components: {
     Subscribe,
     PageNav
+  },
+  data() {
+    return {
+      post: null,
+      prevPost: null,
+      nextPost: null
+    }
   },
   async asyncData ({ app, params, error, payload }) {
     if (payload) {
@@ -61,17 +68,25 @@ export default {
     }
   },
   head() {
+    if (!this.post) {
+      return {}
+    }
+
+    const imagePath = this.post.image && this.post.image.path
+      ? 'https://api.willbrowning.me/storage/uploads' + this.post.image.path
+      : 'https://willbrowning.me/handstand.jpg'
+
     return {
       title: this.post.title,
       meta: [
         { hid: 'description', name: 'description', content: this.post.meta_description },
         { hid: 'og:title', property: 'og:title', content: this.post.title },
         { hid: 'og:description', property: 'og:description', content: this.post.meta_description },
-        { hid: 'og:image', property: 'og:image', content: 'https://api.willbrowning.me/storage/uploads' + this.post.image.path },
+        { hid: 'og:image', property: 'og:image', content: imagePath },
         { hid: 'twitter:site', property: 'twitter:site', content: this.post.title },
         { hid: 'twitter:title', property: 'twitter:title', content: this.post.title },
         { hid: 'twitter:description', property: 'twitter:description', content: this.post.meta_description },
-        { hid: 'twitter:image', property: 'twitter:image', content: `https://api.willbrowning.me/storage/uploads${this.post.image.path}` }
+        { hid: 'twitter:image', property: 'twitter:image', content: imagePath }
       ]
     }
   },

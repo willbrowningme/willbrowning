@@ -84,14 +84,14 @@ export default {
   },
   methods: {
     waitForTurnstile() {
-      if (window.turnstile) {
+      if (window.turnstile && typeof window.turnstile.render === 'function') {
         return Promise.resolve()
       }
 
       return new Promise((resolve, reject) => {
         const started = Date.now()
         const timer = setInterval(() => {
-          if (window.turnstile) {
+          if (window.turnstile && typeof window.turnstile.render === 'function') {
             clearInterval(timer)
             resolve()
           } else if (Date.now() - started > 10000) {
@@ -110,9 +110,6 @@ export default {
 
       try {
         await this.waitForTurnstile()
-        if (typeof window.turnstile.ready === 'function') {
-          await new Promise((resolve) => window.turnstile.ready(resolve))
-        }
         if (this.widgetId !== null || !this.$refs.turnstile) {
           return
         }
