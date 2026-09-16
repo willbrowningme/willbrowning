@@ -4,7 +4,7 @@
       <div class="page-content text-center md:text-left">
         <p class="mb-6">
           Here are the topics I've discussed on this site. If you'd like to see more posts on a certain subject or would like to see something new just let me know on
-          <a target="_blank" rel="nofollow noopener noreferrer" href="https://twitter.com/willbrowningme">Twitter</a>.
+          <a target="_blank" rel="nofollow noopener noreferrer" href="https://x.com/willbrowningme">X.com</a>.
         </p>
         <ul class="topics">
           <li v-for="topic in topics" :key="topic.name" class="block mb-4">

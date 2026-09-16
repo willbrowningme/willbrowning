@@ -18,9 +18,6 @@
 
       <page-nav :prevPost="prevPost" :nextPost="nextPost"/>
 
-      <div id="commento"></div>
-      <script src="https://comments.willbrowning.me/js/commento.js"></script>
-
     </article>
   </section>
 </template>
