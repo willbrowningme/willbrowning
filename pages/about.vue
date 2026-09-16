@@ -8,7 +8,7 @@
         This site uses the <a href="https://jamstack.org/" target="_blank" rel="noopener noreferrer nofollow">JAMstack</a> architecture and is open source. You can find the source code on GitHub <a href="https://github.com/willbrowningme/willbrowning" target="_blank" rel="noopener noreferrer nofollow">here</a>.
       </p>
       <p>
-        The site is built with <a href="https://nuxtjs.org/" target="_blank" rel="noopener noreferrer nofollow">Nuxt.js</a> and has <a href="https://getcockpit.com/" target="_blank" rel="noopener noreferrer nofollow">Cockpit</a> as a headless CMS.
+        The site is built with <a href="https://nuxtjs.org/" target="_blank" rel="noopener noreferrer nofollow">Nuxt.js</a>. Blog posts are Markdown files in the GitHub repository.
       </p>
       <p>
         This site <b>will not</b> set any cookies.

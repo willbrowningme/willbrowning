@@ -30,28 +30,18 @@ export default {
   components: {
     PostList
   },
-  async asyncData({ app, error }) {
-    const { data } = await app.$axios.post(
-      process.env.POSTS_URL,
-      JSON.stringify({
-        filter: { published: true },
-        limit: process.env.PER_PAGE,
-        sort: { _created: -1 },
-        populate: 1
-      }),
-      {
-        headers: { "Content-Type": "application/json" }
-      }
-    )
+  asyncData({ error }) {
+    const { paginate } = require('~/lib/posts')
+    const data = paginate(1)
 
-    if (!data.entries) {
+    if (!data.posts.length) {
       return error({ message: "404 Page not found", statusCode: 404 })
     }
 
     return {
-      posts: data.entries,
-      hasNext: process.env.PER_PAGE < data.total,
-      totalPages: Math.ceil(data.total / process.env.PER_PAGE)
+      posts: data.posts,
+      hasNext: data.hasNext,
+      totalPages: data.totalPages
     }
   }
 }

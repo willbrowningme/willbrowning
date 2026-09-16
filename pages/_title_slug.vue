@@ -31,7 +31,7 @@ export default {
     Subscribe,
     PageNav
   },
-  async asyncData ({ app, params, error, payload }) {
+  asyncData ({ params, error, payload }) {
     if (payload && payload.post) {
       return {
         post: payload.post,
@@ -40,34 +40,24 @@ export default {
       }
     }
 
-    const { data } = await app.$axios.post(process.env.POSTS_URL,
-    JSON.stringify({
-        filter: { published: true, title_slug: params.title_slug },
-        sort: {_created:-1},
-        populate: 1
-      }),
-    {
-      headers: { 'Content-Type': 'application/json' }
-    })
+    const { getPostBySlug } = require('~/lib/posts')
+    const result = getPostBySlug(params.title_slug)
 
-    if (!data.entries || !data.entries[0]) {
+    if (!result) {
       return error({ message: '404 Page not found', statusCode: 404 })
     }
 
-    return {
-      post: data.entries[0],
-      prevPost: null,
-      nextPost: null
-    }
+    return result
   },
   head() {
     if (!this.post) {
       return {}
     }
 
-    const imagePath = this.post.image && this.post.image.path
-      ? 'https://api.willbrowning.me/storage/uploads' + this.post.image.path
-      : 'https://willbrowning.me/handstand.jpg'
+    const siteUrl = String(process.env.URL || 'https://willbrowning.me').replace(/\/$/, '')
+    const imagePath = this.post.image
+      ? (/^https?:\/\//.test(this.post.image) ? this.post.image : siteUrl + this.post.image)
+      : siteUrl + '/handstand.jpg'
 
     return {
       title: this.post.title,

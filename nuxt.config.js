@@ -1,38 +1,18 @@
 require('dotenv').config()
-const axios = require('axios')
+const path = require('path')
 const marked = require('marked')
 const collect = require('collect.js')
+const { loadMarkdownPosts } = require('./lib/load-markdown-posts')
+const { perPage } = require('./lib/parse-post')
 
-const perPage = Number(process.env.PER_PAGE)
-
-async function fetchPosts(payload) {
-  try {
-    const { data } = await axios.post(
-      process.env.POSTS_URL,
-      JSON.stringify(payload),
-      {
-        headers: { 'Content-Type': 'application/json' }
-      }
-    )
-    return data
-  } catch (error) {
-    const res = error.response
-    if (res) {
-      console.error('[cms] request failed', {
-        status: res.status,
-        server: res.headers.server,
-        cfRay: res.headers['cf-ray'],
-        contentType: res.headers['content-type']
-      })
-    }
-    throw error
-  }
-}
+const postsPerPage = perPage()
 
 export default {
   target: 'static',
   env: {
-    TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY || ''
+    TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY || '',
+    URL: process.env.URL || 'https://willbrowning.me',
+    PER_PAGE: String(postsPerPage)
   },
   /*
   ** Headers of the page
@@ -72,7 +52,6 @@ export default {
     ]
   },
   modules: [
-    '@nuxtjs/axios',
     '@nuxtjs/sitemap',
     '@nuxtjs/feed',
   ],
@@ -161,9 +140,6 @@ export default {
       },
     }
   },
-  axios: {
-    browserBaseURL: '/'
-  },
   plugins: [
     '~/plugins/vue-filters'
   ],
@@ -171,26 +147,25 @@ export default {
     '~/assets/css/tailwind.css'
   ],
   generate: {
-    routes: async () => {
-      const data = await fetchPosts({
-          filter: { published: true },
-          sort: {_created:-1},
-          populate: 1
-        })
-
-      const collection = collect(data.entries)
+    routes: () => {
+      const entries = loadMarkdownPosts()
+      const collection = collect(entries)
+      const total = entries.length
 
       const tags = collection.map(post => post.tags)
       .flatten()
       .unique()
       .map(tag => {
-        let payload = collection.filter(item => {
+        const payload = collection.filter(item => {
           return collect(item.tags).contains(tag)
         }).all()
 
         return {
           route: `category/${tag}`,
-          payload: payload
+          payload: {
+            posts: payload,
+            category: tag
+          }
         }
       }).all()
 
@@ -205,23 +180,23 @@ export default {
         }
       }).all()
 
-      if(perPage < data.total) {
+      if (postsPerPage < total) {
         const pages = collection
-        .take(perPage-data.total)
-        .chunk(perPage)
+        .skip(postsPerPage)
+        .chunk(postsPerPage)
         .map((items, key) => {
-          let page = key+2
+          const page = key + 2
           return {
             route: `blog/${page}`,
             payload: {
               posts: items.all(),
-              hasNext: page*perPage < data.total,
-              totalPages: Math.ceil(data.total / perPage)
+              hasNext: page * postsPerPage < total,
+              totalPages: Math.ceil(total / postsPerPage)
             }
           }
         }).all()
 
-        return posts.concat(tags,pages)
+        return posts.concat(tags, pages)
       }
 
       return posts.concat(tags)
@@ -233,13 +208,10 @@ export default {
     gzip: false,
     cacheTime: 1000 * 60 * 15,
     generate: true, // Enable me when using nuxt generate
-    routes: async () => {
-      const data = await fetchPosts({
-          filter: { published: true },
-          sort: {_created:-1}
-        })
-
-      const collection = collect(data.entries)
+    routes: () => {
+      const entries = loadMarkdownPosts()
+      const collection = collect(entries)
+      const total = entries.length
 
       const tags = collection.map(post => post.tags)
       .flatten()
@@ -248,13 +220,13 @@ export default {
 
       const posts = collection.map(post => post.title_slug).all()
 
-      if(perPage < data.total) {
+      if (postsPerPage < total) {
         const pages = collection
-        .take(perPage-data.total)
-        .chunk(perPage)
-        .map((items, page) => `blog/${page+2}`).all()
+        .skip(postsPerPage)
+        .chunk(postsPerPage)
+        .map((items, page) => `blog/${page + 2}`).all()
 
-        return posts.concat(tags,pages)
+        return posts.concat(tags, pages)
       }
 
       return posts.concat(tags)
@@ -263,7 +235,7 @@ export default {
   feed: [
     {
       path: '/feed.xml', // The route to your feed.
-      create: async feed => {
+      create: feed => {
         feed.options = {
           title: 'Will Browning - Feed',
           id: process.env.URL+'/feed.xml',
@@ -273,19 +245,14 @@ export default {
           copyright: 'All rights reserved, Will Browning'
         }
 
-        const data = await fetchPosts({
-            filter: { published: true },
-            sort: {_created:-1}
-          })
-
-        data.entries.forEach(post => {
+        loadMarkdownPosts().forEach(post => {
           feed.addItem({
             title: post.title,
             link: `${process.env.URL}/${post.title_slug}`,
             id: `${process.env.URL}/${post.title_slug}`,
             description: post.meta_description,
             content: marked.parse(post.content),
-            date: new Date(post._created*1000),
+            date: new Date(post._created * 1000),
           })
         })
       },
@@ -300,5 +267,16 @@ export default {
   /*
   ** Build configuration
   */
-  build: {}
+  build: {
+    extend(config) {
+      config.module.rules.push({
+        test: /\.md$/,
+        include: path.resolve(__dirname, 'content/posts'),
+        loader: 'raw-loader',
+        options: {
+          esModule: false
+        }
+      })
+    }
+  }
 }

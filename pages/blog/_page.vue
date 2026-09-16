@@ -42,37 +42,29 @@ export default {
   components: {
     PostList
   },
-  async asyncData ({ app, params, error, payload }) {
-    /* if (payload) {
+  asyncData ({ params, error, payload }) {
+    if (payload && payload.posts) {
       return {
         posts: payload.posts,
         page: params.page,
         hasNext: payload.hasNext,
         totalPages: payload.totalPages
       }
-    } else if(process.server) { */
-      const { data } = await app.$axios.post(process.env.POSTS_URL,
-      JSON.stringify({
-          filter: { published: true },
-          limit: process.env.PER_PAGE,
-          skip: (params.page-1)*process.env.PER_PAGE,
-          sort: {_created:-1}
-        }),
-      {
-        headers: { 'Content-Type': 'application/json' }
-      })
+    }
 
-      if (!data.entries[0]) {
-        return error({ message: '404 Page not found', statusCode: 404 })
-      }
+    const { paginate } = require('~/lib/posts')
+    const data = paginate(params.page)
 
-      return {
-        posts: data.entries,
-        page: params.page,
-        hasNext: params.page * process.env.PER_PAGE < data.total,
-        totalPages: Math.ceil(data.total / process.env.PER_PAGE)
-      }
-    //}
+    if (!data.posts.length || Number(params.page) !== data.page) {
+      return error({ message: '404 Page not found', statusCode: 404 })
+    }
+
+    return {
+      posts: data.posts,
+      page: params.page,
+      hasNext: data.hasNext,
+      totalPages: data.totalPages
+    }
   },
   head() {
     return {

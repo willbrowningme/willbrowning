@@ -14,25 +14,19 @@ export default {
   components: {
     PostList
   },
-  async asyncData ({ app, params, error, payload }) {
-    /* if (payload) {
-      return { posts: payload, category: params.tag }
-    } else if(process.server) { */
-      const { data } = await app.$axios.post(process.env.POSTS_URL,
-      JSON.stringify({
-          filter: { published: true, tags: { $has:params.tag } },
-          sort: {_created:-1}
-        }),
-      {
-        headers: { 'Content-Type': 'application/json' }
-      })
+  asyncData ({ params, error, payload }) {
+    if (payload && payload.posts) {
+      return { posts: payload.posts, category: payload.category || params.tag }
+    }
 
-      if (!data.entries[0]) {
-        return error({ message: '404 Page not found', statusCode: 404 })
-      }
+    const { getPostsByTag } = require('~/lib/posts')
+    const posts = getPostsByTag(params.tag)
 
-      return { posts: data.entries, category: params.tag }
-    //}
+    if (!posts.length) {
+      return error({ message: '404 Page not found', statusCode: 404 })
+    }
+
+    return { posts, category: params.tag }
   },
   head() {
     return {

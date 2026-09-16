@@ -20,52 +20,21 @@
 </template>
 
 <script>
-const collect = require("collect.js")
-
 export default {
   head() {
     return {
       title: "Topics - Will Browning"
     }
   },
-  async asyncData({ app, error }) {
-    const { data } = await app.$axios.post(
-      process.env.POSTS_URL,
-      JSON.stringify({
-        filter: { published: true },
-        sort: { _created: -1 }
-      }),
-      {
-        headers: { "Content-Type": "application/json" }
-      }
-    )
+  asyncData({ error }) {
+    const { getTopics } = require('~/lib/posts')
+    const topics = getTopics()
 
-    if (!data.entries) {
+    if (!topics.length) {
       return error({ message: "404 Page not found", statusCode: 404 })
     }
 
-    const collection = collect(data.entries)
-
-    const topics = collection
-      .map(post => post.tags)
-      .flatten()
-      .unique()
-      .map(tag => {
-        let count = collection
-          .filter(item => {
-            return collect(item.tags).contains(tag)
-          })
-          .count()
-
-        return {
-          name: tag,
-          count: count
-        }
-      })
-      .sortByDesc(topic => topic.count)
-      .all()
-
-    return { topics: topics }
+    return { topics }
   }
 }
 </script>
