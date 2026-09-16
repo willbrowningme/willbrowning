@@ -32,32 +32,32 @@ export default {
     PageNav
   },
   async asyncData ({ app, params, error, payload }) {
-    if (payload) {
+    if (payload && payload.post) {
       return {
         post: payload.post,
         prevPost: payload.prevPost,
         nextPost: payload.nextPost
       }
-    } else {
-      const { data } = await app.$axios.post(process.env.POSTS_URL,
-      JSON.stringify({
-          filter: { published: true, title_slug: params.title_slug },
-          sort: {_created:-1},
-          populate: 1
-        }),
-      {
-        headers: { 'Content-Type': 'application/json' }
-      })
+    }
 
-      if (!data.entries[0]) {
-        return error({ message: '404 Page not found', statusCode: 404 })
-      }
+    const { data } = await app.$axios.post(process.env.POSTS_URL,
+    JSON.stringify({
+        filter: { published: true, title_slug: params.title_slug },
+        sort: {_created:-1},
+        populate: 1
+      }),
+    {
+      headers: { 'Content-Type': 'application/json' }
+    })
 
-      return {
-        post: data.entries[0],
-        prevPost: null,
-        nextPost: null
-      }
+    if (!data.entries || !data.entries[0]) {
+      return error({ message: '404 Page not found', statusCode: 404 })
+    }
+
+    return {
+      post: data.entries[0],
+      prevPost: null,
+      nextPost: null
     }
   },
   head() {
