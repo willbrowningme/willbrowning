@@ -32,7 +32,7 @@
               autocomplete="off"
             />
           </div>
-          <div ref="turnstile" class="mb-4"></div>
+          <div ref="turnstile" v-once class="mb-4"></div>
           <button
             type="submit"
             class="button w-full bg-pink text-white font-bold py-2 px-4 rounded font-sans tracking-wider"
@@ -76,18 +76,6 @@ export default {
       return Boolean(this.email && this.token && !this.submitting)
     }
   },
-  head() {
-    return {
-      script: [
-        {
-          hid: 'cf-turnstile',
-          src: 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
-          async: true,
-          defer: true
-        }
-      ]
-    }
-  },
   mounted() {
     this.renderWidget()
   },
@@ -114,13 +102,20 @@ export default {
       })
     },
     async renderWidget() {
-      if (!this.siteKey || !this.$refs.turnstile) {
+      await this.$nextTick()
+
+      if (!this.siteKey || !this.$refs.turnstile || this.widgetId !== null) {
         return
       }
 
       try {
         await this.waitForTurnstile()
-        this.removeWidget()
+        if (typeof window.turnstile.ready === 'function') {
+          await new Promise((resolve) => window.turnstile.ready(resolve))
+        }
+        if (this.widgetId !== null || !this.$refs.turnstile) {
+          return
+        }
         this.widgetId = window.turnstile.render(this.$refs.turnstile, {
           sitekey: this.siteKey,
           theme: 'light',

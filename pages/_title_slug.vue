@@ -14,7 +14,7 @@
       <div class="page-content markdown" v-html="toHtml(post.meta_description + '\n\n' + post.content)">
       </div>
 
-      <subscribe/>
+      <subscribe :key="post.title_slug"/>
 
       <page-nav :prevPost="prevPost" :nextPost="nextPost"/>
 
