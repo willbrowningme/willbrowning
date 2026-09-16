@@ -31,13 +31,6 @@ export default {
     Subscribe,
     PageNav
   },
-  data() {
-    return {
-      post: null,
-      prevPost: null,
-      nextPost: null
-    }
-  },
   async asyncData ({ app, params, error, payload }) {
     if (payload) {
       return {
