@@ -12,3 +12,4 @@ dist
 
 # Env file
 .env
+.output

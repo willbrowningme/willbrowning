@@ -1,10 +1,9 @@
 [build]
   command = "node ./create-env.js && npm run generate"
-  publish = "dist"
+  publish = ".output/public"
 
 [build.environment]
-  NODE_VERSION = "18"
-  NODE_OPTIONS = "--openssl-legacy-provider"
+  NODE_VERSION = "22"
 
 [functions]
   directory = "netlify/functions"

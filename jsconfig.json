@@ -1,7 +1,0 @@
-{
-  "include": [
-    "./pages/**/*.vue",
-    "./layouts/**/*.vue",
-    "./components/**/*.vue",
-  ]
-}

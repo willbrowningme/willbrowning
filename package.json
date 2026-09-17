@@ -5,32 +5,27 @@
   "author": "Will <will@willbrowning.me>",
   "private": true,
   "engines": {
-    "node": "^14.18.0 || >=16.10.0"
+    "node": ">=18.20.0"
   },
   "scripts": {
-    "dev": "nuxt",
+    "dev": "nuxt dev",
     "build": "nuxt build",
-    "start": "nuxt start",
     "generate": "nuxt generate",
-    "lint": "eslint --ext .js,.vue --ignore-path .gitignore .",
-    "precommit": "npm run lint"
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@nuxtjs/axios": "^5.13.6",
-    "@nuxtjs/feed": "^2.0.0",
-    "@nuxtjs/sitemap": "^2.4.0",
-    "collect.js": "^4.36.1",
-    "dayjs": "^1.11.23",
-    "dotenv": "^16.6.1",
-    "glob-all": "^3.3.1",
+    "dayjs": "^1.11.18",
+    "feed": "^4.2.2",
     "gray-matter": "^4.0.3",
-    "highlight.js": "^11.12.0",
+    "highlight.js": "^11.11.1",
     "marked": "^4.3.0",
-    "nuxt": "^2.18.1",
-    "remove-markdown": "^0.7.0"
+    "nuxt": "^4.5.2",
+    "remove-markdown": "^0.6.2"
   },
   "devDependencies": {
-    "@nuxtjs/tailwindcss": "^4.2.1",
-    "raw-loader": "^4.0.2"
+    "@nuxtjs/sitemap": "^8.5.0",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "typescript": "^5.9.2"
   }
 }
