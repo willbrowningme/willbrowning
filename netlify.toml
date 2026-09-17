@@ -1,9 +1,10 @@
 [build]
   command = "node ./create-env.js && npm run generate"
-  publish = ".output/public"
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22"
+  NITRO_PRESET = "netlify-static"
 
 [functions]
   directory = "netlify/functions"
